@@ -79,5 +79,9 @@
     "branches": [
       "main"
     ]
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "xrpl": "^2.0.2"
   }
 }
