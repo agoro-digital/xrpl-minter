@@ -4,40 +4,31 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export interface MinterConfig {
-  gravatar: string;
+  gravatar?: string;
   domainName: string;
   metadata: string;
   issuingWallet: string;
   issuingWalletSecret: string;
-  hotWalletAddress: string;
-  hotWalletSecret: string;
+  server?: string;
 }
 
 export class NftMinter {
-  #gravatar: string;
+  server: string;
+  #gravatar?: string;
   #domainName: string;
   #metadata: string;
   #issuingWallet: xrpl.Wallet | null;
-  #hotWalletAddress: string;
-  #hotWalletSecret: string;
   #xrplClient: xrpl.Client;
 
-  constructor({
-    gravatar,
-    domainName,
-    metadata,
-    hotWalletAddress,
-    hotWalletSecret,
-  }: MinterConfig) {
+  constructor({ gravatar, domainName, metadata, server }: MinterConfig) {
     this.#gravatar = gravatar;
     this.#domainName = domainName;
     this.#metadata = metadata;
     this.#issuingWallet = null;
-    this.#hotWalletAddress = hotWalletAddress;
-    this.#hotWalletSecret = hotWalletSecret;
-    this.#xrplClient = new xrpl.Client(
-      process.env.XRPL_NET || 'wss://s.altnet.rippletest.net/'
-    );
+    this.server = server
+      ? server
+      : process.env.XRPL_NET || 'wss://s.altnet.rippletest.net/';
+    this.#xrplClient = new xrpl.Client(this.server);
   }
 
   async connectClient() {
@@ -50,7 +41,7 @@ export class NftMinter {
     this.#issuingWallet = response.wallet;
     console.log(
       'Issuing account successfully created with classic address of: ' +
-        this.#issuingWallet
+        this.#issuingWallet.address
     );
   }
 
