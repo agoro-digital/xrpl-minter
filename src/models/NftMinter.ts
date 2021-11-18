@@ -1,3 +1,4 @@
+//@ts-ignore
 import * as xrpl from 'xrpl';
 import dotenv from 'dotenv';
 dotenv.config();

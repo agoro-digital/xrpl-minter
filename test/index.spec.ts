@@ -1,3 +1,4 @@
+//@ts-ignore
 import { NftMinter, MinterConfig } from '../src';
 
 describe('index', () => {
