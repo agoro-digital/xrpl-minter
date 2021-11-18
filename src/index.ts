@@ -1,2 +1,1 @@
-//@ts-ignore
-export * from './models/NftMinter';
+export * from './models/nft-minter';
