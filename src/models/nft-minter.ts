@@ -13,25 +13,28 @@ export interface MinterConfig {
 }
 
 export class NftMinter {
-  server: string;
-
   #gravatar?: string;
 
   #domainName: string;
 
   #metadata: string;
-
-  #issuingWallet?: xrpl.Wallet;
-
+  #issuingWallet: xrpl.Wallet | null;
+  #distributorWallet: xrpl.Wallet | null;
+  #hotWalletAddress: string | null;
+  #hotWalletSecret: string | null;
   #xrplClient: xrpl.Client;
 
   constructor({ gravatar, domainName, metadata, server }: MinterConfig) {
     this.#gravatar = gravatar;
     this.#domainName = domainName;
     this.#metadata = metadata;
-    this.server =
-      server || process.env.XRPL_NET || 'wss://s.altnet.rippletest.net/';
-    this.#xrplClient = new xrpl.Client(this.server);
+    this.#issuingWallet = null;
+    this.#distributorWallet = null;
+    this.#hotWalletAddress = null;
+    this.#hotWalletSecret = null;
+    this.#xrplClient = new xrpl.Client(
+      process.env.XRPL_NET || 'wss://s.altnet.rippletest.net/'
+    );
   }
 
   async connectClient() {
@@ -42,10 +45,16 @@ export class NftMinter {
   async createAccount() {
     const response = await this.#xrplClient.fundWallet();
     this.#issuingWallet = response.wallet;
+    console.log('Issuing account successfully created');
+    console.log('Issuing wallet: ' + this.#issuingWallet.classicAddress);
+  }
+
+  async createDistributorAccount() {
+    const response = await this.#xrplClient.fundWallet();
+    this.#distributorWallet = response.wallet;
+    console.log('Distributor account successfully created');
     console.log(
-      `Issuing account successfully created with classic address of: ${
-        this.#issuingWallet.address
-      }`
+      'Distributor wallet: ' + this.#distributorWallet.classicAddress
     );
   }
 
@@ -63,10 +72,11 @@ export class NftMinter {
         wallet: this.#issuingWallet,
       });
 
-      console.log('Response for successful Account set tx');
-      console.log(response);
+      console.log('Response for successful Account set tx: ');
     }
   }
+
+  async sendCertification() {}
 
   async disconnectClient() {
     await this.#xrplClient.disconnect();
