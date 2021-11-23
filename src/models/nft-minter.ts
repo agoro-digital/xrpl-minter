@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as xrpl from 'xrpl';
 import dotenv from 'dotenv';
-import { LedgerEntry } from 'xrpl';
+import { ctiEncode, generateCurrencyCode } from '../utils';
 
 dotenv.config();
 
@@ -26,7 +28,9 @@ export class NftMinter {
 
   #xrplClient: xrpl.Client;
 
-  constructor({ gravatar, domainName, metadata, server }: MinterConfig) {
+  #cti?: number;
+
+  constructor({ gravatar, domainName, metadata }: MinterConfig) {
     this.#gravatar = gravatar;
     this.#domainName = domainName;
     this.#metadata = metadata;
@@ -88,8 +92,8 @@ export class NftMinter {
       expand: false,
       owner_funds: false,
     };
-    const tague = await this.#xrplClient.request(tx);
-    console.log(tague);
+    const res = await this.#xrplClient.request(tx);
+    return res;
   }
 
   #createMemo(memoData: string, memoFormat: string, memoType: string) {
@@ -127,8 +131,38 @@ export class NftMinter {
         wallet: this.#issuingWallet,
       });
       console.log({ payment });
-      await this.getLedger();
+      const {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        result: { ledger_hash, ledger_index },
+      } = await this.getLedger();
+      this.#cti = Number(
+        ctiEncode(
+          payment.result.hash,
+          //@ts-expect-error - error
+          payment.result.meta.TransactionIndex,
+          ledger_hash,
+          ledger_index
+        )
+      );
     }
+  }
+
+  async createTrustLine() {
+    const tx: xrpl.TrustSet = {
+      TransactionType: 'TrustSet',
+      Account: this.#distributorWallet?.classicAddress || '',
+      Flags: 262144,
+      LimitAmount: {
+        currency: generateCurrencyCode(this.#cti as number, 'Test NFT'),
+        issuer: this.#issuingWallet?.classicAddress || '',
+        value:
+          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+      },
+    };
+    const res = await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#distributorWallet,
+    });
+    console.log({ res });
   }
 
   async disconnectClient() {
@@ -136,3 +170,6 @@ export class NftMinter {
     console.log('Client disconnected');
   }
 }
+
+/* eslint-enable @typescript-eslint/no-unsafe-member-access */
+/* eslint-enable @typescript-eslint/no-unsafe-argument */

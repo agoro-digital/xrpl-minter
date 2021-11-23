@@ -16,6 +16,7 @@ const main = async () => {
   await minter.createDistributorAccount();
   await minter.accountSet();
   await minter.sendCertification();
+  await minter.createTrustLine();
   await minter.disconnectClient();
 };
 
