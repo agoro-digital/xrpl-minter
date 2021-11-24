@@ -1,4 +1,9 @@
 module.exports = {
+  root:true,
+  parserOptions: {
+    tsconfigRootDir: __dirname,
+    project: ['./packages/*/tsconfig.json']
+  },
   plugins: [
     '@typescript-eslint',
     'eslint-comments',
@@ -20,9 +25,6 @@ module.exports = {
   env: {
     node: true,
     jest: true,
-  },
-  parserOptions: {
-    project: './tsconfig.json',
   },
   rules: {
     // Too restrictive, writing ugly code to defend against a very unlikely scenario: https://eslint.org/docs/rules/no-prototype-builtins

@@ -1,0 +1,31 @@
+{
+  "name": "@agoro-digital/mint-nft",
+  "version": "0.1.0",
+  "description": "CLI tool to Mint NFTs on the XRPL ledger",
+  "source": "cli.ts",
+  "main": "lib/cli.js",
+  "types": "lib/cli.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agoro-digital/xrpl-minter",
+    "directory": "packages/mint-nft"
+  },
+  "scripts": {
+    "build": "parcel build"
+  },
+  "bin": {
+    "mint-nft": "lib/cli.js"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Luke Brobbin",
+    "email": "lukebrobbs@users.noreply.github.com",
+    "url": "https://github.com/lukebrobbs"
+  },
+  "dependencies": {
+    "meow": "^7.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.10"
+  }
+}
