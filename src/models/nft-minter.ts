@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as xrpl from 'xrpl';
 import dotenv from 'dotenv';
-import { ctiEncode, generateCurrencyCode } from '../utils';
+import { ctiEncode, determineBithompUri, generateCurrencyCode } from '../utils';
 
 dotenv.config();
 
@@ -55,9 +55,9 @@ export class NftMinter {
     this.#issuingWallet = response.wallet;
     console.log('Issuing account successfully created');
     console.log(
-      `Issuing wallet: https://test.bithomp.com/explorer/${
-        this.#issuingWallet.classicAddress
-      }`
+      `Issuing wallet: ${determineBithompUri(
+        this.#xrplClient.connection.getUrl()
+      )}/${this.#issuingWallet.classicAddress}`
     );
   }
 
@@ -186,23 +186,27 @@ export class NftMinter {
   }
 
   async sendNft() {
-    if (this.#issuingWallet && this.#distributorWallet && this.#issuedCurrencyCode !== undefined) {
-        const tx: xrpl.Payment = {
-          Account: this.#issuingWallet.classicAddress,
-          Amount: {
-            issuer: this.#issuingWallet.classicAddress,
-            currency: this.#issuedCurrencyCode,
-            value:
-              '0.000000000000000000000000000000000000000000000000000000000000000000000000000000002',
-          },
-          Destination: this.#distributorWallet.classicAddress,
-          TransactionType: 'Payment',
-        };
-        await this.#xrplClient.submitAndWait(tx, {
-          wallet: this.#issuingWallet,
-        });
-        console.log('NFT/s sent to distributor wallet');
-      }
+    if (
+      this.#issuingWallet &&
+      this.#distributorWallet &&
+      this.#issuedCurrencyCode !== undefined
+    ) {
+      const tx: xrpl.Payment = {
+        Account: this.#issuingWallet.classicAddress,
+        Amount: {
+          issuer: this.#issuingWallet.classicAddress,
+          currency: this.#issuedCurrencyCode,
+          value:
+            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000002',
+        },
+        Destination: this.#distributorWallet.classicAddress,
+        TransactionType: 'Payment',
+      };
+      await this.#xrplClient.submitAndWait(tx, {
+        wallet: this.#issuingWallet,
+      });
+      console.log('NFT/s sent to distributor wallet');
+    }
   }
 
   async sendToThirdParty() {

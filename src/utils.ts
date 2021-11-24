@@ -31,6 +31,16 @@ export function generateCurrencyCode(cti: number, nftName: string) {
   return nftIdentifier + ctiHex.toUpperCase() + nftHex.toUpperCase();
 }
 
+export function determineBithompUri(connectionUri: string) {
+  const baseUri = new URL('https://bithomp.com');
+  baseUri.pathname = '/explorer';
+
+  if (connectionUri.includes('test')) {
+    baseUri.hostname = 'test.bithomp.com';
+  }
+  return baseUri.toString();
+}
+
 // function ctiIsSimple(cti) {
 //   return cti >> 56n == 0;
 // }
