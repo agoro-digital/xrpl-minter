@@ -13,6 +13,7 @@ export function ctiEncode(
   cti += BigInt(txn_index);
   cti <<= 32n;
   cti += BigInt(ledger_index);
+
   return cti;
 }
 

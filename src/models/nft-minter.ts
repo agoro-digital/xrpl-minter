@@ -91,14 +91,10 @@ export class NftMinter {
 
   async getLedger(id: string | number) {
     const tx: xrpl.LedgerRequest = {
-      id: id,
       command: 'ledger',
-      ledger_index: 'validated',
-      full: false,
-      accounts: false,
-      transactions: false,
-      expand: false,
-      owner_funds: false,
+      ledger_index: id as number,
+      transactions: true,
+      expand: true,
     };
     const res = await this.#xrplClient.request(tx);
     return res;
@@ -143,15 +139,15 @@ export class NftMinter {
       );
       const {
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        result: { ledger_hash, ledger_index },
-      } = await this.getLedger(payment.id);
+        result: { ledger_hash },
+      } = await this.getLedger(payment.result.ledger_index as number);
       this.#cti = Number(
         ctiEncode(
           payment.result.hash,
           //@ts-expect-error - error
           payment.result.meta.TransactionIndex,
           ledger_hash,
-          ledger_index
+          payment.result.ledger_index as number
         )
       );
     }
