@@ -17,6 +17,8 @@ const main = async () => {
   await minter.accountSet();
   await minter.sendCertification();
   await minter.createTrustLine();
+  await minter.sendNft();
+  await minter.sendToThirdParty();
   await minter.disconnectClient();
 };
 

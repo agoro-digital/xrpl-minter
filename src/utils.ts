@@ -28,7 +28,6 @@ export function generateCurrencyCode(cti: number, nftName: string) {
     nftHex += '0';
   }
 
-  console.log({ cti: cti.toString(), ctiHex, nftName, nftHex });
   return nftIdentifier + ctiHex.toUpperCase() + nftHex.toUpperCase();
 }
 

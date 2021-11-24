@@ -30,6 +30,10 @@ export class NftMinter {
 
   #cti?: number;
 
+  #issuedCurrencyCode?: string;
+
+  #thirdPartyWallet?: xrpl.Wallet;
+
   constructor({ gravatar, domainName, metadata }: MinterConfig) {
     this.#gravatar = gravatar;
     this.#domainName = domainName;
@@ -50,7 +54,11 @@ export class NftMinter {
     const response = await this.#xrplClient.fundWallet();
     this.#issuingWallet = response.wallet;
     console.log('Issuing account successfully created');
-    console.log('Issuing wallet: ' + this.#issuingWallet.classicAddress);
+    console.log(
+      `Issuing wallet: https://test.bithomp.com/explorer/${
+        this.#issuingWallet.classicAddress
+      }`
+    );
   }
 
   async createDistributorAccount() {
@@ -81,9 +89,9 @@ export class NftMinter {
     }
   }
 
-  async getLedger() {
+  async getLedger(id: string | number) {
     const tx: xrpl.LedgerRequest = {
-      id: '22951799',
+      id: id,
       command: 'ledger',
       ledger_index: 'validated',
       full: false,
@@ -130,11 +138,13 @@ export class NftMinter {
       const payment = await this.#xrplClient.submitAndWait(tx, {
         wallet: this.#issuingWallet,
       });
-      console.log({ payment });
+      console.log(
+        'Certification payment sent from issuing wallet to distributor wallet'
+      );
       const {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         result: { ledger_hash, ledger_index },
-      } = await this.getLedger();
+      } = await this.getLedger(payment.id);
       this.#cti = Number(
         ctiEncode(
           payment.result.hash,
@@ -148,21 +158,92 @@ export class NftMinter {
   }
 
   async createTrustLine() {
+    this.#issuedCurrencyCode = generateCurrencyCode(
+      this.#cti as number,
+      'TestNFT'
+    ).toString();
     const tx: xrpl.TrustSet = {
       TransactionType: 'TrustSet',
       Account: this.#distributorWallet?.classicAddress || '',
       Flags: 262144,
       LimitAmount: {
-        currency: generateCurrencyCode(this.#cti as number, 'Test NFT'),
+        currency: this.#issuedCurrencyCode,
         issuer: this.#issuingWallet?.classicAddress || '',
         value:
-          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000002',
       },
     };
-    const res = await this.#xrplClient.submitAndWait(tx, {
+    await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#distributorWallet,
     });
-    console.log({ res });
+    if (this.#issuingWallet && this.#distributorWallet) {
+      console.log(
+        `Trustline created from wallet ${
+          this.#distributorWallet?.classicAddress
+        } to ${this.#issuingWallet?.classicAddress}`
+      );
+    }
+  }
+
+  async sendNft() {
+    if (this.#issuingWallet && this.#distributorWallet && this.#issuedCurrencyCode !== undefined) {
+        const tx: xrpl.Payment = {
+          Account: this.#issuingWallet.classicAddress,
+          Amount: {
+            issuer: this.#issuingWallet.classicAddress,
+            currency: this.#issuedCurrencyCode,
+            value:
+              '0.000000000000000000000000000000000000000000000000000000000000000000000000000000002',
+          },
+          Destination: this.#distributorWallet.classicAddress,
+          TransactionType: 'Payment',
+        };
+        await this.#xrplClient.submitAndWait(tx, {
+          wallet: this.#issuingWallet,
+        });
+        console.log('NFT/s sent to distributor wallet');
+      }
+  }
+
+  async sendToThirdParty() {
+    if (
+      this.#distributorWallet &&
+      this.#issuedCurrencyCode !== undefined &&
+      this.#issuingWallet
+    ) {
+      const response = await this.#xrplClient.fundWallet();
+
+      const trustlineTx: xrpl.TrustSet = {
+        TransactionType: 'TrustSet',
+        Account: response.wallet.classicAddress || '',
+        Flags: 262144,
+        LimitAmount: {
+          currency: this.#issuedCurrencyCode,
+          issuer: this.#issuingWallet?.classicAddress || '',
+          value:
+            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+        },
+      };
+      await this.#xrplClient.submitAndWait(trustlineTx, {
+        wallet: response.wallet,
+      });
+
+      const tx: xrpl.Payment = {
+        Account: this.#distributorWallet.classicAddress,
+        Amount: {
+          issuer: this.#issuingWallet.classicAddress,
+          currency: this.#issuedCurrencyCode,
+          value:
+            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+        },
+        Destination: response.wallet.classicAddress,
+        TransactionType: 'Payment',
+      };
+      await this.#xrplClient.submitAndWait(tx, {
+        wallet: this.#distributorWallet,
+      });
+      console.log('Nft sent to third party wallet.');
+    }
   }
 
   async disconnectClient() {
