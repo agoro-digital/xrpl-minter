@@ -1,4 +1,6 @@
 import { convertStringToHex } from 'xrpl';
+import log from 'loglevel';
+import chalk from 'chalk';
 
 export function ctiEncode(
   txn_hash: string /* hex string */,
@@ -14,6 +16,11 @@ export function ctiEncode(
   cti <<= 32n;
   cti += BigInt(ledger_index);
 
+  log.debug(
+    chalk.greenBright(`\nCTI ${cti} created from the following values:\n`)
+  );
+  log.debug({ txn_hash, txn_index, ledger_hash, ledger_index });
+
   return cti;
 }
 
@@ -28,8 +35,10 @@ export function generateCurrencyCode(cti: number, nftName: string) {
   while (nftHex.length < 24) {
     nftHex += '0';
   }
-
-  return nftIdentifier + ctiHex.toUpperCase() + nftHex.toUpperCase();
+  const currencyCode =
+    nftIdentifier + ctiHex.toUpperCase() + nftHex.toUpperCase();
+  log.debug(chalk.greenBright(`\ncurrency code ${currencyCode} created`));
+  return currencyCode;
 }
 
 export function determineBithompUri(connectionUri: string) {

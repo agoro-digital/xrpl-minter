@@ -50,13 +50,14 @@
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "@types/node": "^12.20.11",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.0.0",
     "codecov": "^3.8.3",
     "commitizen": "^4.2.4",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.22.0",
-    "@typescript-eslint/eslint-plugin": "^5.4.0",
-    "@typescript-eslint/parser": "^5.0.0",
     "eslint-config-airbnb-base": "15.0.0",
+    "eslint-config-airbnb-typescript": "^16.0.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-formatter-pretty": "4.0.0",
     "eslint-plugin-eslint-comments": "3.2.0",
@@ -66,7 +67,6 @@
     "eslint-plugin-promise": "4.3.1",
     "eslint-plugin-react": "7.22.0",
     "eslint-plugin-unicorn": "28.0.2",
-    "eslint-config-airbnb-typescript": "^16.0.0",
     "husky": "^7.0.2",
     "jest": "^27.2.4",
     "lint-staged": "^11.2.0",
@@ -89,7 +89,9 @@
     ]
   },
   "dependencies": {
+    "chalk": "^4.1.2",
     "dotenv": "^10.0.0",
+    "loglevel": "^1.8.0",
     "xrpl": "^2.0.2"
   }
 }

@@ -10,6 +10,7 @@ const main = async () => {
     metadata: '3',
     hotWalletAddress: '1',
     hotWalletSecret: '1',
+    logLevel: 'debug',
   });
   await minter.connectClient();
   await minter.createAccount();

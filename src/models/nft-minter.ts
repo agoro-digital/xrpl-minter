@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as xrpl from 'xrpl';
+import log, { LogLevelDesc } from 'loglevel';
+import chalk from 'chalk';
 import dotenv from 'dotenv';
 import { ctiEncode, determineBithompUri, generateCurrencyCode } from '../utils';
 
@@ -12,6 +14,10 @@ export interface MinterConfig {
   metadata: string;
   issuingWallet: string;
   issuingWalletSecret: string;
+  /**
+   * Set the log level for more detailed log outputs. Defaults to 'info'
+   */
+  logLevel?: LogLevelDesc;
   server?: string;
 }
 
@@ -34,7 +40,13 @@ export class NftMinter {
 
   #thirdPartyWallet?: xrpl.Wallet;
 
-  constructor({ gravatar, domainName, metadata }: MinterConfig) {
+  constructor({
+    gravatar,
+    domainName,
+    metadata,
+    logLevel = 'info',
+  }: MinterConfig) {
+    log.setDefaultLevel(logLevel);
     this.#gravatar = gravatar;
     this.#domainName = domainName;
     this.#metadata = metadata;
@@ -47,26 +59,39 @@ export class NftMinter {
 
   async connectClient() {
     await this.#xrplClient.connect();
-    console.log('Client connected');
+    log.info(
+      chalk.greenBright(
+        `\nClient connected to ${chalk.underline(
+          this.#xrplClient.connection.getUrl()
+        )}`
+      )
+    );
   }
 
   async createAccount() {
+    log.debug(chalk.yellow('\nCreating issuing wallet...'));
     const response = await this.#xrplClient.fundWallet();
     this.#issuingWallet = response.wallet;
-    console.log('Issuing account successfully created');
-    console.log(
-      `Issuing wallet: ${determineBithompUri(
-        this.#xrplClient.connection.getUrl()
-      )}/${this.#issuingWallet.classicAddress}`
+    log.debug(
+      `${chalk.greenBright('Created issuing wallet ✨')}: ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          this.#issuingWallet.classicAddress
+        }`
+      )}`
     );
   }
 
   async createDistributorAccount() {
+    log.debug(chalk.yellow('\nCreating distributor wallet...'));
     const response = await this.#xrplClient.fundWallet();
     this.#distributorWallet = response.wallet;
-    console.log('Distributor account successfully created');
-    console.log(
-      'Distributor wallet: ' + this.#distributorWallet.classicAddress
+
+    log.debug(
+      `${chalk.greenBright('Created distributor wallet ✨')}: ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          this.#distributorWallet.classicAddress
+        }`
+      )}`
     );
   }
 
@@ -80,11 +105,18 @@ export class NftMinter {
         Fee: '12',
         SetFlag: 8,
       };
+      log.debug(chalk.yellow('\nConfiguring issuer account...'));
       const response = await this.#xrplClient.submitAndWait(tx, {
         wallet: this.#issuingWallet,
       });
-      console.log(
-        `Response for successful Account set tx: ${response.result.Account}`
+      log.debug(
+        `${chalk.greenBright(
+          'Configuration successful ✨ tx:'
+        )} ${chalk.underline(
+          `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+            response.result.hash
+          }}`
+        )}`
       );
     }
   }
@@ -131,11 +163,22 @@ export class NftMinter {
           ),
         ],
       };
+      log.debug(
+        chalk.yellow(
+          '\nSending certification payment from issuer to distributor...'
+        )
+      );
       const payment = await this.#xrplClient.submitAndWait(tx, {
         wallet: this.#issuingWallet,
       });
-      console.log(
-        'Certification payment sent from issuing wallet to distributor wallet'
+      log.debug(
+        `${chalk.greenBright(
+          'Certification payment successful ✨ tx:'
+        )} ${chalk.underline(
+          `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+            payment.result.hash
+          }}`
+        )}`
       );
       const {
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -169,14 +212,23 @@ export class NftMinter {
           '0.000000000000000000000000000000000000000000000000000000000000000000000000000000002',
       },
     };
-    await this.#xrplClient.submitAndWait(tx, {
+    log.debug(
+      chalk.yellow(
+        '\nCreating a trustline between the distributor and issuer wallets...'
+      )
+    );
+    const res = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#distributorWallet,
     });
     if (this.#issuingWallet && this.#distributorWallet) {
-      console.log(
-        `Trustline created from wallet ${
-          this.#distributorWallet?.classicAddress
-        } to ${this.#issuingWallet?.classicAddress}`
+      log.debug(
+        `${chalk.greenBright(
+          'Trustline creation successful ✨ tx:'
+        )} ${chalk.underline(
+          `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+            res.result.hash
+          }}`
+        )}`
       );
     }
   }
@@ -198,10 +250,19 @@ export class NftMinter {
         Destination: this.#distributorWallet.classicAddress,
         TransactionType: 'Payment',
       };
-      await this.#xrplClient.submitAndWait(tx, {
+      log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
+      const res = await this.#xrplClient.submitAndWait(tx, {
         wallet: this.#issuingWallet,
       });
-      console.log('NFT/s sent to distributor wallet');
+      log.debug(
+        `${chalk.greenBright(
+          'Sucessfully sent NFT/S 🚀 tx:'
+        )} ${chalk.underline(
+          `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+            res.result.hash
+          }}`
+        )}`
+      );
     }
   }
 
@@ -242,7 +303,7 @@ export class NftMinter {
       await this.#xrplClient.submitAndWait(tx, {
         wallet: this.#distributorWallet,
       });
-      console.log('Nft sent to third party wallet.');
+      log.debug(chalk.greenBright('\nNft sent to third party wallet.'));
     }
   }
 
@@ -252,10 +313,19 @@ export class NftMinter {
       Account: this.#issuingWallet?.classicAddress as string,
       RegularKey: 'rrrrrrrrrrrrrrrrrrrrBZbvji',
     };
-    await this.#xrplClient.submitAndWait(tx, {
+    log.debug(chalk.yellow('\nSetting regular key for issuing account...'));
+    const res = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
     });
-    console.log('Regular key set for issuing account');
+    log.debug(
+      `${chalk.greenBright(
+        'Sucessfully set regular key for issuing account ✨ tx:'
+      )} ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          res.result.hash
+        }}`
+      )}`
+    );
   }
 
   async blackholeIssuingAccount() {
@@ -264,15 +334,25 @@ export class NftMinter {
       Account: this.#issuingWallet?.classicAddress as string,
       SetFlag: 4,
     };
-    await this.#xrplClient.submitAndWait(tx, {
+    log.debug(chalk.yellow('\nBlackholing issuer wallet...'));
+
+    const res = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
     });
-    console.log('Master key remove and account blackholed!');
+    log.debug(
+      `${chalk.greenBright(
+        'Master key removed and issuing account blackholed! 🛸'
+      )} ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          res.result.hash
+        }}`
+      )}`
+    );
   }
 
   async disconnectClient() {
     await this.#xrplClient.disconnect();
-    console.log('Client disconnected');
+    log.info(chalk.greenBright('\nClient disconnected'));
   }
 }
 
