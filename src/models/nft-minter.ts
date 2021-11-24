@@ -246,6 +246,30 @@ export class NftMinter {
     }
   }
 
+  async regularKeySet() {
+    const tx: xrpl.SetRegularKey = {
+      TransactionType: 'SetRegularKey',
+      Account: this.#issuingWallet?.classicAddress as string,
+      RegularKey: 'rrrrrrrrrrrrrrrrrrrrBZbvji',
+    };
+    await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#issuingWallet,
+    });
+    console.log('Regular key set for issuing account');
+  }
+
+  async blackholeIssuingAccount() {
+    const tx: xrpl.AccountSet = {
+      TransactionType: 'AccountSet',
+      Account: this.#issuingWallet?.classicAddress as string,
+      SetFlag: 4,
+    };
+    await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#issuingWallet,
+    });
+    console.log('Master key remove and account blackholed!');
+  }
+
   async disconnectClient() {
     await this.#xrplClient.disconnect();
     console.log('Client disconnected');

@@ -19,6 +19,8 @@ const main = async () => {
   await minter.createTrustLine();
   await minter.sendNft();
   await minter.sendToThirdParty();
+  await minter.regularKeySet();
+  await minter.blackholeIssuingAccount();
   await minter.disconnectClient();
 };
 
