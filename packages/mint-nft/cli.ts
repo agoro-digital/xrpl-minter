@@ -1,5 +1,4 @@
 #! /usr/bin/env node
-/* eslint-disable unicorn/no-process-exit */
 import meow from 'meow';
 import chalk from 'chalk';
 import chalkAnimation from 'chalk-animation';
@@ -113,5 +112,3 @@ async function run() {
   await minter.blackholeIssuingAccount();
   await minter.disconnectClient();
 }
-
-/* eslint-enable unicorn/no-process-exit */
