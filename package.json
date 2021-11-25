@@ -18,7 +18,8 @@
     "cm": "cz",
     "semantic-release": "semantic-release",
     "prepare": "husky install",
-    "build": "parcel build"
+    "build": "parcel build",
+    "test": "yarn workspaces run test"
   },
   "dependencies": {
     "chalk": "^4.1.2",
