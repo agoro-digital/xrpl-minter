@@ -14,7 +14,8 @@
     "directory": "packages/mint-nft"
   },
   "scripts": {
-    "build": "parcel build"
+    "build": "parcel build",
+    "test": "echo Write some tests!"
   },
   "bin": {
     "mint-nft": "lib/cli.js"
