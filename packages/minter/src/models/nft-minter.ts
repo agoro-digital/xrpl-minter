@@ -4,7 +4,12 @@ import * as xrpl from 'xrpl';
 import log from 'loglevel';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
-import { ctiEncode, determineBithompUri, generateCurrencyCode } from '../utils';
+import {
+  ctiEncode,
+  determineBithompUri,
+  determineXrplArtUri,
+  generateCurrencyCode,
+} from '../utils';
 
 dotenv.config();
 
@@ -39,6 +44,8 @@ export class NftMinter {
 
   #issuedCurrencyCode?: string;
 
+  #nftName: string;
+
   #thirdPartyWallet?: xrpl.Wallet;
 
   constructor({
@@ -54,6 +61,7 @@ export class NftMinter {
     this.#metadata = metadata;
     this.#issuingWallet = undefined;
     this.#distributorWallet = undefined;
+    this.#nftName = 'TestNft';
     this.#xrplClient = new xrpl.Client(
       process.env.XRPL_NET || clientUri || 'wss://s.altnet.rippletest.net/'
     );
@@ -197,7 +205,7 @@ export class NftMinter {
   async createTrustLine() {
     this.#issuedCurrencyCode = generateCurrencyCode(
       this.#cti as number,
-      'TestNFT'
+      this.#nftName
     ).toString();
     const tx: xrpl.TrustSet = {
       TransactionType: 'TrustSet',
@@ -349,6 +357,15 @@ export class NftMinter {
   }
 
   async disconnectClient() {
+    log.debug(
+      `\n${chalk.greenBright('NFT minting complete:')} ${chalk.underline(
+        determineXrplArtUri(
+          this.#xrplClient.connection.getUrl(),
+          this.#issuingWallet?.classicAddress as string,
+          this.#nftName
+        )
+      )}`
+    );
     await this.#xrplClient.disconnect();
     log.info(chalk.greenBright('\nClient disconnected'));
   }
