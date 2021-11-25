@@ -18,7 +18,7 @@
     "cm": "cz",
     "semantic-release": "semantic-release",
     "prepare": "husky install",
-    "build": "parcel build",
+    "build": "yarn workspaces run build",
     "test": "yarn workspaces run test"
   },
   "dependencies": {
