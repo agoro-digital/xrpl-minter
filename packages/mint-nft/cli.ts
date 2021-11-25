@@ -48,31 +48,48 @@ async function run() {
   ledgers.set('testnet', 'wss://s.altnet.rippletest.net/');
   ledgers.set('mainnet', 'wss://xrplcluster.com/');
 
-  const ledgerUri = await inquirer.prompt<{
-    network: Network;
-  }>({
-    type: 'list',
-    name: 'network',
-    message: 'Which network would you like to create the NFT on?',
-    default: 'testnet',
-    choices: [
-      { name: 'Testnet', value: 'testnet' },
-      { name: 'Mainnet', value: 'mainnet' },
-    ],
-  });
-
   const answers = await inquirer.prompt<{
+    network: Network;
     issuerWallet: string | undefined;
     distributorWallet: string | undefined;
     cid: string;
     meta: string;
+    addIssuerWallet: boolean;
+    addDistributorWallet: boolean;
   }>([
+    {
+      type: 'list',
+      name: 'network',
+      message: 'Which network would you like to create the NFT on?',
+      default: 'testnet',
+      choices: [
+        { name: 'Testnet', value: 'testnet' },
+        { name: 'Mainnet', value: 'mainnet' },
+      ],
+    },
+    {
+      type: 'confirm',
+      name: 'addIssuerWallet',
+      message:
+        'Do you wish to add an issuer wallet? If no, one will be created automatically.',
+      default: false,
+      when: ({ network }) => network === 'testnet',
+    },
     {
       type: 'input',
       name: 'issuerWallet',
-      message:
-        'What is the address of the issuing wallet? If on the testnet, this is not required.',
+      message: 'What is the address of the issuing wallet?',
       default: undefined,
+      when: ({ addIssuerWallet, network }) =>
+        network === 'mainnet' || addIssuerWallet,
+    },
+    {
+      type: 'confirm',
+      name: 'addDistributorWallet',
+      message:
+        'Do you wish to add a distributor wallet? If no, one will be created automatically.',
+      default: false,
+      when: ({ network }) => network === 'testnet',
     },
     {
       type: 'input',
@@ -80,6 +97,8 @@ async function run() {
       message:
         'What is the address of the distributor wallet? If on the testnet, this is not required.',
       default: undefined,
+      when: ({ addDistributorWallet, network }) =>
+        network === 'mainnet' || addDistributorWallet,
     },
     {
       type: 'input',
@@ -98,8 +117,9 @@ async function run() {
     metadata: answers.meta,
     cid: answers.cid,
     logLevel: 'debug',
-    clientUri: ledgers.get(ledgerUri.network),
+    clientUri: ledgers.get(answers.network),
   });
+
   await minter.connectClient();
   await minter.createAccount();
   await minter.createDistributorAccount();
