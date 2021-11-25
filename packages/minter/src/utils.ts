@@ -33,7 +33,7 @@ export function generateCurrencyCode(cti: number, nftName: string) {
   let nftHex = convertStringToHex(nftName);
 
   while (nftHex.length < 24) {
-    nftHex += '0';
+    nftHex = '0' + nftHex;
   }
   const currencyCode =
     nftIdentifier + ctiHex.toUpperCase() + nftHex.toUpperCase();

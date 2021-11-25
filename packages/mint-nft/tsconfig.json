@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
     "lib": ["ES2021"],
+    "target": "es2020",
     "module": "es2020",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "strict": true,
 
-    "noEmit": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "lib"
   }
 }

@@ -1,7 +1,8 @@
 {
-    "files": [],
-    "references": [
-      { "path": "packages/minter" },
-      { "path": "packages/mint-nft" },
-    ]
-  }
+  "files": [],
+  "references": [
+    { "path": "packages/minter" },
+    { "path": "packages/mint-nft" }
+  ],
+  "moduleResolution": "node"
+}

@@ -10,10 +10,11 @@ dotenv.config();
 
 export interface MinterConfig {
   gravatar?: string;
-  domainName: string;
+  cid: string;
   metadata: string;
   issuingWallet: string;
   issuingWalletSecret: string;
+  clientUri?: string;
   /**
    * Set the log level for more detailed log outputs. Defaults to 'info'
    */
@@ -24,7 +25,7 @@ export interface MinterConfig {
 export class NftMinter {
   #gravatar?: string;
 
-  #domainName: string;
+  #cid: string;
 
   #metadata: string;
 
@@ -42,18 +43,19 @@ export class NftMinter {
 
   constructor({
     gravatar,
-    domainName,
+    cid,
     metadata,
+    clientUri,
     logLevel = 'info',
   }: MinterConfig) {
     log.setDefaultLevel(logLevel);
     this.#gravatar = gravatar;
-    this.#domainName = domainName;
+    this.#cid = cid;
     this.#metadata = metadata;
     this.#issuingWallet = undefined;
     this.#distributorWallet = undefined;
     this.#xrplClient = new xrpl.Client(
-      process.env.XRPL_NET || 'wss://s.altnet.rippletest.net/'
+      process.env.XRPL_NET || clientUri || 'wss://s.altnet.rippletest.net/'
     );
   }
 
@@ -100,8 +102,8 @@ export class NftMinter {
       const tx: xrpl.AccountSet = {
         TransactionType: 'AccountSet',
         Account: this.#issuingWallet.classicAddress,
-        Domain: this.#domainName,
-        EmailHash: this.#gravatar,
+        Domain: xrpl.convertStringToHex(`hash:${this.#metadata}`),
+        ...(this.#gravatar && { EmailHash: this.#gravatar }),
         Fee: '12',
         SetFlag: 8,
       };
@@ -156,11 +158,7 @@ export class NftMinter {
             'Description'
           ),
           this.#createMemo('Tague', 'text/plain', 'Author'),
-          this.#createMemo(
-            'hash:QmQGjvaEaShcxKQtDavafgYgLu3N44db9MBtbWUE2tQ1WQ',
-            'text/uri',
-            'PrimaryUri'
-          ),
+          this.#createMemo(`hash:${this.#cid}`, 'text/uri', 'PrimaryUri'),
         ],
       };
       log.debug(
@@ -209,7 +207,7 @@ export class NftMinter {
         currency: this.#issuedCurrencyCode,
         issuer: this.#issuingWallet?.classicAddress || '',
         value:
-          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000002',
+          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
       },
     };
     log.debug(
@@ -245,7 +243,7 @@ export class NftMinter {
           issuer: this.#issuingWallet.classicAddress,
           currency: this.#issuedCurrencyCode,
           value:
-            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000002',
+            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
         },
         Destination: this.#distributorWallet.classicAddress,
         TransactionType: 'Payment',
