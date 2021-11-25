@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as xrpl from 'xrpl';
-import log, { LogLevelDesc } from 'loglevel';
+import log from 'loglevel';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
 import { ctiEncode, determineBithompUri, generateCurrencyCode } from '../utils';
@@ -18,7 +18,7 @@ export interface MinterConfig {
   /**
    * Set the log level for more detailed log outputs. Defaults to 'info'
    */
-  logLevel?: LogLevelDesc;
+  logLevel?: log.LogLevelDesc;
   server?: string;
 }
 
