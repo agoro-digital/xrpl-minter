@@ -52,7 +52,6 @@ async function run() {
     network: Network;
     issuerWallet: string | undefined;
     distributorWallet: string | undefined;
-    cid: string;
     meta: string;
     addIssuerWallet: boolean;
     addDistributorWallet: boolean;
@@ -102,11 +101,6 @@ async function run() {
     },
     {
       type: 'input',
-      name: 'cid',
-      message: 'What is the CID of the NFT in IPFS?',
-    },
-    {
-      type: 'input',
       name: 'meta',
       message: 'What is the CID of the NFT meta file in IPFS?',
     },
@@ -115,12 +109,11 @@ async function run() {
   //@ts-expect-error - not added issuing wallet info yet
   const minter = new NftMinter({
     metadata: answers.meta,
-    cid: answers.cid,
     logLevel: 'debug',
     clientUri: ledgers.get(answers.network),
   });
 
-  await minter.connectClient();
+  await minter.init();
   await minter.createAccount();
   await minter.createDistributorAccount();
   await minter.accountSet();

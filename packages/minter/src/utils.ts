@@ -1,6 +1,46 @@
 import { convertStringToHex } from 'xrpl';
 import log from 'loglevel';
 import chalk from 'chalk';
+import axios from 'axios';
+import type { AxiosPromise } from 'axios';
+import { Schema, Validators, validate } from 'tiny-validation';
+import { MetadataInfo } from './models/nft-minter';
+
+export function isError(e: unknown): e is Error {
+  return e instanceof Error;
+}
+
+const schema: Schema = {
+  name: [Validators.isPresent()],
+  description: [Validators.isPresent()],
+  image: [Validators.isPresent()],
+  properties: [Validators.isPresent()],
+};
+
+function validateMetaResponse(res?: unknown): res is MetadataInfo {
+  if (!res) return false;
+  const result = validate(schema, res as Record<string, unknown>);
+  result.fold(
+    e => {
+      log.error(
+        chalk.red('\n error validating meta response from IFPS –'),
+        e,
+        '\n'
+      );
+      throw new Error('Meta data not valid');
+    },
+    x => log.debug(chalk.greenBright('Found meta data from IFPS – '), x)
+  );
+  return !result.isFail;
+}
+
+export async function getIpfsMeta(
+  cid: string
+): Promise<AxiosPromise<MetadataInfo>> {
+  const res = await axios(`https://gateway.pinata.cloud/ipfs/${cid}`);
+  validateMetaResponse(res.data);
+  return res;
+}
 
 export function ctiEncode(
   txn_hash: string /* hex string */,

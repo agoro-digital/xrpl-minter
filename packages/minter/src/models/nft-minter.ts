@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as xrpl from 'xrpl';
 import log from 'loglevel';
+import invariant from 'tiny-invariant';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
 import {
@@ -9,15 +10,16 @@ import {
   determineBithompUri,
   determineXrplArtUri,
   generateCurrencyCode,
+  getIpfsMeta,
+  isError,
 } from '../utils';
-import axios from 'axios';
 
 dotenv.config();
 
-interface MetadataProperties {
+export interface MetadataProperties {
   author: string;
 }
-interface MetadataInfo {
+export interface MetadataInfo {
   name: string;
   description: string;
   image: string;
@@ -26,22 +28,16 @@ interface MetadataInfo {
 
 export interface MinterConfig {
   gravatar?: string;
-  cid: string;
   metadata: string;
-  issuingWallet: string;
-  issuingWalletSecret: string;
   clientUri?: string;
   /**
    * Set the log level for more detailed log outputs. Defaults to 'info'
    */
   logLevel?: log.LogLevelDesc;
-  server?: string;
 }
 
 export class NftMinter {
   #gravatar?: string;
-
-  #cid: string;
 
   #metadata: string;
 
@@ -55,38 +51,37 @@ export class NftMinter {
 
   #issuedCurrencyCode?: string;
 
-  #nftName: string;
-
   #thirdPartyWallet?: xrpl.Wallet;
 
-  #metadataInfo: MetadataInfo;
+  #metadataInfo?: MetadataInfo;
 
   constructor({
     gravatar,
-    cid,
     metadata,
     clientUri,
     logLevel = 'info',
   }: MinterConfig) {
     log.setDefaultLevel(logLevel);
     this.#gravatar = gravatar;
-    this.#cid = cid;
     this.#metadata = metadata;
     this.#issuingWallet = undefined;
     this.#distributorWallet = undefined;
-    this.#nftName = 'TestNft';
     this.#xrplClient = new xrpl.Client(
       process.env.XRPL_NET || clientUri || 'wss://s.altnet.rippletest.net/'
     );
-    this.#metadataInfo = {
-      name: 'test',
-      image: 'test',
-      description: 'test',
-      properties: { author: 'test' },
-    };
   }
 
-  async connectClient() {
+  async init() {
+    try {
+      const meta = await getIpfsMeta(this.#metadata);
+      this.#metadataInfo = meta.data;
+    } catch (error) {
+      if (isError(error)) {
+        throw new Error(
+          `\nError getting meta data from IFPS: ${error.message}`
+        );
+      }
+    }
     await this.#xrplClient.connect();
     log.info(
       chalk.greenBright(
@@ -125,29 +120,29 @@ export class NftMinter {
   }
 
   async accountSet() {
-    if (this.#issuingWallet) {
-      const tx: xrpl.AccountSet = {
-        TransactionType: 'AccountSet',
-        Account: this.#issuingWallet.classicAddress,
-        Domain: xrpl.convertStringToHex(`hash:${this.#metadata}`),
-        ...(this.#gravatar && { EmailHash: this.#gravatar }),
-        Fee: '12',
-        SetFlag: 8,
-      };
-      log.debug(chalk.yellow('\nConfiguring issuer account...'));
-      const response = await this.#xrplClient.submitAndWait(tx, {
-        wallet: this.#issuingWallet,
-      });
-      log.debug(
-        `${chalk.greenBright(
-          'Configuration successful ✨ tx:'
-        )} ${chalk.underline(
-          `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
-            response.result.hash
-          }}`
-        )}`
-      );
-    }
+    invariant(this.#issuingWallet);
+
+    const tx: xrpl.AccountSet = {
+      TransactionType: 'AccountSet',
+      Account: this.#issuingWallet.classicAddress,
+      Domain: xrpl.convertStringToHex(`hash:${this.#metadata}`),
+      ...(this.#gravatar && { EmailHash: this.#gravatar }),
+      Fee: '12',
+      SetFlag: 8,
+    };
+    log.debug(chalk.yellow('\nConfiguring issuer account...'));
+    const response = await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#issuingWallet,
+    });
+    log.debug(
+      `${chalk.greenBright(
+        'Configuration successful ✨ tx:'
+      )} ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          response.result.hash
+        }}`
+      )}`
+    );
   }
 
   async getLedger(id: string | number) {
@@ -172,185 +167,169 @@ export class NftMinter {
   }
 
   async sendCertification() {
-    if (this.#issuingWallet && this.#distributorWallet) {
-      try {
-        const response = await axios.get(
-          'https://gateway.pinata.cloud/ipfs/QmScAChEXeLLqaSTjdKLKiymv4SdB1N5qMQ4eQ8ZR2qqHm'
-        );
+    invariant(this.#issuingWallet);
+    invariant(this.#distributorWallet);
+    invariant(this.#metadataInfo);
 
-        this.#metadataInfo = response.data;
-        if (this.#metadataInfo !== undefined) {
-          console.log(this.#metadataInfo);
-          const tx: xrpl.Payment = {
-            Account: this.#issuingWallet.classicAddress,
-            Amount: '10000',
-            Destination: this.#distributorWallet.classicAddress,
-            TransactionType: 'Payment',
-            Memos: [
-              this.#createMemo(
-                this.#metadataInfo.description,
-                'text/plain',
-                'Description'
-              ),
-              this.#createMemo(
-                this.#metadataInfo?.properties.author,
-                'text/plain',
-                'Author'
-              ),
-              this.#createMemo(
-                `${this.#metadataInfo.image}`,
-                'text/uri',
-                'PrimaryUri'
-              ),
-            ],
-          };
+    log.debug('\nmetadata from IFPS: ', this.#metadataInfo);
+    const tx: xrpl.Payment = {
+      Account: this.#issuingWallet.classicAddress,
+      Amount: '10000',
+      Destination: this.#distributorWallet.classicAddress,
+      TransactionType: 'Payment',
+      Memos: [
+        this.#createMemo(
+          this.#metadataInfo.description,
+          'text/plain',
+          'Description'
+        ),
+        this.#createMemo(
+          this.#metadataInfo?.properties.author,
+          'text/plain',
+          'Author'
+        ),
+        this.#createMemo(
+          `${this.#metadataInfo.image}`,
+          'text/uri',
+          'PrimaryUri'
+        ),
+      ],
+    };
 
-          log.debug(
-            chalk.yellow(
-              '\nSending certification payment from issuer to distributor...'
-            )
-          );
-          const payment = await this.#xrplClient.submitAndWait(tx, {
-            wallet: this.#issuingWallet,
-          });
-          log.debug(
-            `${chalk.greenBright(
-              'Certification payment successful ✨ tx:'
-            )} ${chalk.underline(
-              `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
-                payment.result.hash
-              }}`
-            )}`
-          );
-          const {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            result: { ledger_hash },
-          } = await this.getLedger(payment.result.ledger_index as number);
-          this.#cti = Number(
-            ctiEncode(
-              payment.result.hash,
-              //@ts-expect-error - error
-              payment.result.meta.TransactionIndex,
-              ledger_hash,
-              payment.result.ledger_index as number
-            )
-          );
-        }
-      } catch (error) {
-        console.log(error.response.body);
-      }
-    }
+    log.debug(
+      chalk.yellow(
+        '\nSending certification payment from issuer to distributor...'
+      )
+    );
+    const payment = await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#issuingWallet,
+    });
+    log.debug(
+      `${chalk.greenBright(
+        'Certification payment successful ✨ tx:'
+      )} ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          payment.result.hash
+        }}`
+      )}`
+    );
+    const {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      result: { ledger_hash },
+    } = await this.getLedger(payment.result.ledger_index as number);
+    this.#cti = Number(
+      ctiEncode(
+        payment.result.hash,
+        //@ts-expect-error - error
+        payment.result.meta.TransactionIndex,
+        ledger_hash,
+        payment.result.ledger_index as number
+      )
+    );
   }
 
   async createTrustLine() {
-    if (this.#metadataInfo !== undefined) {
-      this.#issuedCurrencyCode = generateCurrencyCode(
-        this.#cti as number,
-        this.#metadataInfo?.name
-      ).toString();
-      const tx: xrpl.TrustSet = {
-        TransactionType: 'TrustSet',
-        Account: this.#distributorWallet?.classicAddress || '',
-        LimitAmount: {
-          currency: this.#issuedCurrencyCode,
-          issuer: this.#issuingWallet?.classicAddress || '',
-          value:
-            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
-        },
-      };
-      log.debug(
-        chalk.yellow(
-          '\nCreating a trustline between the distributor and issuer wallets...'
-        )
-      );
-      const res = await this.#xrplClient.submitAndWait(tx, {
-        wallet: this.#distributorWallet,
-      });
-      if (this.#issuingWallet && this.#distributorWallet) {
-        log.debug(
-          `${chalk.greenBright(
-            'Trustline creation successful ✨ tx:'
-          )} ${chalk.underline(
-            `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
-              res.result.hash
-            }}`
-          )}`
-        );
-      }
-    }
+    invariant(this.#metadataInfo);
+    this.#issuedCurrencyCode = generateCurrencyCode(
+      this.#cti as number,
+      this.#metadataInfo?.name
+    ).toString();
+    const tx: xrpl.TrustSet = {
+      TransactionType: 'TrustSet',
+      Account: this.#distributorWallet?.classicAddress || '',
+      LimitAmount: {
+        currency: this.#issuedCurrencyCode,
+        issuer: this.#issuingWallet?.classicAddress || '',
+        value:
+          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+      },
+    };
+    log.debug(
+      chalk.yellow(
+        '\nCreating a trustline between the distributor and issuer wallets...'
+      )
+    );
+    const res = await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#distributorWallet,
+    });
+    invariant(this.#issuingWallet);
+    invariant(this.#distributorWallet);
+    log.debug(
+      `${chalk.greenBright(
+        'Trustline creation successful ✨ tx:'
+      )} ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          res.result.hash
+        }}`
+      )}`
+    );
   }
 
   async sendNft() {
-    if (
-      this.#issuingWallet &&
-      this.#distributorWallet &&
-      this.#issuedCurrencyCode !== undefined
-    ) {
-      const tx: xrpl.Payment = {
-        Account: this.#issuingWallet.classicAddress,
-        Amount: {
-          issuer: this.#issuingWallet.classicAddress,
-          currency: this.#issuedCurrencyCode,
-          value:
-            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
-        },
-        Destination: this.#distributorWallet.classicAddress,
-        TransactionType: 'Payment',
-      };
-      log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
-      const res = await this.#xrplClient.submitAndWait(tx, {
-        wallet: this.#issuingWallet,
-      });
-      log.debug(
-        `${chalk.greenBright(
-          'Sucessfully sent NFT/S 🚀 tx:'
-        )} ${chalk.underline(
-          `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
-            res.result.hash
-          }}`
-        )}`
-      );
-    }
+    invariant(this.#issuingWallet);
+    invariant(this.#distributorWallet);
+    invariant(this.#issuedCurrencyCode);
+
+    const tx: xrpl.Payment = {
+      Account: this.#issuingWallet.classicAddress,
+      Amount: {
+        issuer: this.#issuingWallet.classicAddress,
+        currency: this.#issuedCurrencyCode,
+        value:
+          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+      },
+      Destination: this.#distributorWallet.classicAddress,
+      TransactionType: 'Payment',
+    };
+    log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
+    const res = await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#issuingWallet,
+    });
+    log.debug(
+      `${chalk.greenBright('Sucessfully sent NFT/S 🚀 tx:')} ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          res.result.hash
+        }}`
+      )}`
+    );
   }
 
   async sendToThirdParty() {
-    if (
-      this.#distributorWallet &&
-      this.#issuedCurrencyCode !== undefined &&
-      this.#issuingWallet
-    ) {
-      const response = await this.#xrplClient.fundWallet();
+    invariant(this.#issuingWallet);
+    invariant(this.#distributorWallet);
+    invariant(this.#issuedCurrencyCode);
 
-      const trustlineTx: xrpl.TrustSet = {
-        TransactionType: 'TrustSet',
-        Account: response.wallet.classicAddress || '',
-        LimitAmount: {
-          currency: this.#issuedCurrencyCode,
-          issuer: this.#issuingWallet?.classicAddress || '',
-          value:
-            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
-        },
-      };
-      await this.#xrplClient.submitAndWait(trustlineTx, {
-        wallet: response.wallet,
-      });
+    const response = await this.#xrplClient.fundWallet();
 
-      const tx: xrpl.Payment = {
-        Account: this.#distributorWallet.classicAddress,
-        Amount: {
-          issuer: this.#issuingWallet.classicAddress,
-          currency: this.#issuedCurrencyCode,
-          value:
-            '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
-        },
-        Destination: response.wallet.classicAddress,
-        TransactionType: 'Payment',
-      };
-      await this.#xrplClient.submitAndWait(tx, {
-        wallet: this.#distributorWallet,
-      });
-      log.debug(chalk.greenBright('\nNft sent to third party wallet.'));
-    }
+    const trustlineTx: xrpl.TrustSet = {
+      TransactionType: 'TrustSet',
+      Account: response.wallet.classicAddress || '',
+      LimitAmount: {
+        currency: this.#issuedCurrencyCode,
+        issuer: this.#issuingWallet?.classicAddress || '',
+        value:
+          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+      },
+    };
+    await this.#xrplClient.submitAndWait(trustlineTx, {
+      wallet: response.wallet,
+    });
+
+    const tx: xrpl.Payment = {
+      Account: this.#distributorWallet.classicAddress,
+      Amount: {
+        issuer: this.#issuingWallet.classicAddress,
+        currency: this.#issuedCurrencyCode,
+        value:
+          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+      },
+      Destination: response.wallet.classicAddress,
+      TransactionType: 'Payment',
+    };
+    await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#distributorWallet,
+    });
+    log.debug(chalk.greenBright('\nNft sent to third party wallet.'));
   }
 
   async regularKeySet() {
@@ -402,7 +381,7 @@ export class NftMinter {
         determineXrplArtUri(
           this.#xrplClient.connection.getUrl(),
           this.#issuingWallet?.classicAddress as string,
-          this.#metadataInfo?.name
+          this.#metadataInfo?.name as string
         )
       )}`
     );
