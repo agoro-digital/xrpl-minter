@@ -33,7 +33,7 @@ export function generateCurrencyCode(cti: number, nftName: string) {
   let nftHex = convertStringToHex(nftName);
 
   while (nftHex.length < 24) {
-    nftHex += '0';
+    nftHex = '0' + nftHex;
   }
   const currencyCode =
     nftIdentifier + ctiHex.toUpperCase() + nftHex.toUpperCase();
@@ -41,13 +41,28 @@ export function generateCurrencyCode(cti: number, nftName: string) {
   return currencyCode;
 }
 
+const isTestnet = (uri: string) => uri.includes('test');
+
 export function determineBithompUri(connectionUri: string) {
   const baseUri = new URL('https://bithomp.com');
   baseUri.pathname = '/explorer';
 
-  if (connectionUri.includes('test')) {
+  if (isTestnet(connectionUri)) {
     baseUri.hostname = 'test.bithomp.com';
   }
+  return baseUri.toString();
+}
+
+export function determineXrplArtUri(
+  connectionUri: string,
+  issuerWallet: string,
+  nftName: string
+) {
+  const baseUri = new URL('https://xrplnft.art/');
+  baseUri.pathname = `/${
+    isTestnet(connectionUri) ? 'testnet' : 'mainnet'
+  }/nft-data/${issuerWallet}/${nftName}`;
+
   return baseUri.toString();
 }
 
