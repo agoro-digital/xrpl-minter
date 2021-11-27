@@ -11,7 +11,7 @@
   "scripts": {
     "build": "parcel build",
     "dev": "parcel watch",
-    "clean": "rm -rf ./lib/",
+    "clean": "npx rimraf ./lib/ node_modules",
     "coverage": "codecov",
     "lint": "eslint ./src/**/* --fix",
     "test:watch": "jest --watch",

@@ -16,7 +16,8 @@
   "scripts": {
     "build": "parcel build",
     "test": "echo Write some tests!",
-    "lint": "eslint --ext .ts --ext .js --fix"
+    "lint": "eslint --ext .ts --ext .js --fix",
+    "clean": "npx rimraf ./lib/ node_modules"
   },
   "bin": {
     "mint-nft": "lib/cli.js"

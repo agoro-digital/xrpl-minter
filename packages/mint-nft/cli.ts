@@ -106,7 +106,6 @@ async function run() {
     },
   ]);
 
-  //@ts-expect-error - not added issuing wallet info yet
   const minter = new NftMinter({
     metadata: answers.meta,
     logLevel: 'debug',
