@@ -32,10 +32,9 @@ async function run() {
       version: { type: 'boolean', default: false, alias: 'v' },
     },
   });
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
   const anim = chalkAnimation.neon(`\n  X R P L  \nM I N T E R`);
   await new Promise(resolve => setTimeout(resolve, 3000));
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   anim.stop();
 
   console.log(
