@@ -47,7 +47,7 @@ export class NftMinter {
 
   #xrplClient: xrpl.Client;
 
-  #cti?: number;
+  #cti?: BigInt;
 
   #issuedCurrencyCode?: string;
 
@@ -184,7 +184,7 @@ export class NftMinter {
           'Description'
         ),
         this.#createMemo(
-          this.#metadataInfo?.properties.author,
+          this.#metadataInfo.properties.author,
           'text/plain',
           'Author'
         ),
@@ -217,21 +217,19 @@ export class NftMinter {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       result: { ledger_hash },
     } = await this.getLedger(payment.result.ledger_index as number);
-    this.#cti = Number(
-      ctiEncode(
-        payment.result.hash,
-        //@ts-expect-error - error
-        payment.result.meta.TransactionIndex,
-        ledger_hash,
-        payment.result.ledger_index as number
-      )
+    this.#cti = ctiEncode(
+      payment.result.hash,
+      //@ts-expect-error - error
+      payment.result.meta.TransactionIndex,
+      ledger_hash,
+      payment.result.ledger_index as number
     );
   }
 
   async createTrustLine() {
     invariant(this.#metadataInfo);
     this.#issuedCurrencyCode = generateCurrencyCode(
-      this.#cti as number,
+      this.#cti as BigInt,
       this.#metadataInfo?.name
     ).toString();
     const tx: xrpl.TrustSet = {

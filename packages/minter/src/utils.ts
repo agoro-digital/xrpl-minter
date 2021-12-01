@@ -52,9 +52,9 @@ export function ctiEncode(
   const txnCheck = BigInt(Number.parseInt(txn_hash.slice(0, 1), 16));
   let cti = (ledgerCheck << 4n) + txnCheck;
   cti <<= 16n;
-  cti += BigInt(txn_index);
+  cti += BigInt(String(txn_index));
   cti <<= 32n;
-  cti += BigInt(ledger_index);
+  cti += BigInt(String(ledger_index));
 
   log.debug(
     chalk.greenBright(`\nCTI ${cti} created from the following values:\n`)
@@ -64,9 +64,9 @@ export function ctiEncode(
   return cti;
 }
 
-export function generateCurrencyCode(cti: number, nftName: string) {
+export function generateCurrencyCode(cti: BigInt, nftName: string) {
   const nftIdentifier = '02';
-  const ctiHex = cti.toString(16).toUpperCase();
+  const ctiHex = cti.toString(16);
   if (nftName.length > 12) {
     throw new Error('Nft name too long');
   }
