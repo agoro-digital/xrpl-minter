@@ -2,6 +2,7 @@
 import meow from 'meow';
 import chalk from 'chalk';
 import chalkAnimation from 'chalk-animation';
+import { CID } from 'multiformats/cid';
 import inquirer from 'inquirer';
 import { NftMinter } from '@agoro-digital/xrpl-minter';
 
@@ -102,6 +103,14 @@ async function run() {
       type: 'input',
       name: 'meta',
       message: 'What is the CID of the NFT meta file in IPFS?',
+      validate: (cid: string) => {
+        try {
+          CID.parse(cid);
+          return true;
+        } catch {
+          return 'Invalid CID';
+        }
+      },
     },
   ]);
 

@@ -7168,6 +7168,11 @@ msgpackr@^1.5.0:
   optionalDependencies:
     msgpackr-extract "^1.0.14"
 
+multiformats@^9.4.14:
+  version "9.4.14"
+  resolved "https://registry.yarnpkg.com/multiformats/-/multiformats-9.4.14.tgz#535452892777f5b316685c9f00d5bf6923bebc95"
+  integrity sha512-X1wtOySaguYL7ua87Gv4+cuvFL3Qi+mpHNcJnzNoyK1NmHy8SfyBIQ1S1KYQoEjXaYoriN+5TP9f4iBJUOQf3A==
+
 multimap@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/multimap/-/multimap-1.1.0.tgz"
