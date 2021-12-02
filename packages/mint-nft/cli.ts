@@ -126,6 +126,7 @@ async function run() {
   await minter.accountSet();
   await minter.sendCertification();
   await minter.createTrustLine();
+  await minter.accountSetDistributor();
   await minter.sendNft();
   await minter.sendToThirdParty();
   await minter.regularKeySet();

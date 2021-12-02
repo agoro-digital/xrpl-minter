@@ -263,6 +263,33 @@ export class NftMinter {
     );
   }
 
+  async accountSetDistributor() {
+    invariant(this.#distributorWallet);
+
+    const tx: xrpl.AccountSet = {
+      TransactionType: 'AccountSet',
+      Account: this.#distributorWallet.classicAddress,
+      Domain: xrpl.convertStringToHex(
+        `https://git.heroku.com/agoro-backend.git/api`
+      ),
+      ...(this.#gravatar && { EmailHash: this.#gravatar }),
+      Fee: '12',
+    };
+    log.debug(chalk.yellow('\nConfiguring distributor account...'));
+    const response = await this.#xrplClient.submitAndWait(tx, {
+      wallet: this.#distributorWallet,
+    });
+    log.debug(
+      `${chalk.greenBright(
+        'Configuration successful ✨ tx:'
+      )} ${chalk.underline(
+        `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
+          response.result.hash
+        }}`
+      )}`
+    );
+  }
+
   async sendNft() {
     invariant(this.#issuingWallet);
     invariant(this.#distributorWallet);
