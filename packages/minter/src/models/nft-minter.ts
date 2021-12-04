@@ -51,8 +51,6 @@ export class NftMinter {
 
   #issuedCurrencyCode?: string;
 
-  #thirdPartyWallet?: xrpl.Wallet;
-
   #metadataInfo?: MetadataInfo;
 
   constructor({
@@ -62,7 +60,7 @@ export class NftMinter {
     logLevel = 'info',
   }: MinterConfig) {
     log.setDefaultLevel(logLevel);
-    this.#gravatar = gravatar;
+    this.#gravatar = gravatar?.toUpperCase();
     this.#metadata = metadata;
     this.#issuingWallet = undefined;
     this.#distributorWallet = undefined;
@@ -121,7 +119,6 @@ export class NftMinter {
 
   async accountSet() {
     invariant(this.#issuingWallet);
-
     const tx: xrpl.AccountSet = {
       TransactionType: 'AccountSet',
       Account: this.#issuingWallet.classicAddress,
@@ -171,7 +168,6 @@ export class NftMinter {
     invariant(this.#distributorWallet);
     invariant(this.#metadataInfo);
 
-    log.debug('\nmetadata from IFPS: ', this.#metadataInfo);
     const tx: xrpl.Payment = {
       Account: this.#issuingWallet.classicAddress,
       Amount: '10000',
@@ -269,10 +265,7 @@ export class NftMinter {
     const tx: xrpl.AccountSet = {
       TransactionType: 'AccountSet',
       Account: this.#distributorWallet.classicAddress,
-      Domain: xrpl.convertStringToHex(
-        `https://git.heroku.com/agoro-backend.git/api`
-      ),
-      ...(this.#gravatar && { EmailHash: this.#gravatar }),
+      Domain: xrpl.convertStringToHex(`kapcher-staging.herokuapp.com`),
       Fee: '12',
     };
     log.debug(chalk.yellow('\nConfiguring distributor account...'));
@@ -317,44 +310,6 @@ export class NftMinter {
         }}`
       )}`
     );
-  }
-
-  async sendToThirdParty() {
-    invariant(this.#issuingWallet);
-    invariant(this.#distributorWallet);
-    invariant(this.#issuedCurrencyCode);
-
-    const response = await this.#xrplClient.fundWallet();
-
-    const trustlineTx: xrpl.TrustSet = {
-      TransactionType: 'TrustSet',
-      Account: response.wallet.classicAddress || '',
-      LimitAmount: {
-        currency: this.#issuedCurrencyCode,
-        issuer: this.#issuingWallet?.classicAddress || '',
-        value:
-          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
-      },
-    };
-    await this.#xrplClient.submitAndWait(trustlineTx, {
-      wallet: response.wallet,
-    });
-
-    const tx: xrpl.Payment = {
-      Account: this.#distributorWallet.classicAddress,
-      Amount: {
-        issuer: this.#issuingWallet.classicAddress,
-        currency: this.#issuedCurrencyCode,
-        value:
-          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
-      },
-      Destination: response.wallet.classicAddress,
-      TransactionType: 'Payment',
-    };
-    await this.#xrplClient.submitAndWait(tx, {
-      wallet: this.#distributorWallet,
-    });
-    log.debug(chalk.greenBright('\nNft sent to third party wallet.'));
   }
 
   async regularKeySet() {

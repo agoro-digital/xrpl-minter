@@ -55,6 +55,8 @@ async function run() {
     meta: string;
     addIssuerWallet: boolean;
     addDistributorWallet: boolean;
+    addGravatarHash: boolean;
+    gravatarHash: string | undefined;
   }>([
     {
       type: 'list',
@@ -112,9 +114,24 @@ async function run() {
         }
       },
     },
+    {
+      type: 'confirm',
+      name: 'addGravatarHash',
+      message: 'Do you wish to add a gravatar hash?',
+      default: false,
+      when: ({ network }) => network === 'testnet' || network === 'mainnet',
+    },
+    {
+      type: 'input',
+      name: 'gravatarHash',
+      message: 'What is the gravatar hash?',
+      default: undefined,
+      when: ({ addGravatarHash }) => addGravatarHash,
+    },
   ]);
 
   const minter = new NftMinter({
+    gravatar: answers.gravatarHash,
     metadata: answers.meta,
     logLevel: 'debug',
     clientUri: ledgers.get(answers.network),
@@ -128,7 +145,6 @@ async function run() {
   await minter.createTrustLine();
   await minter.accountSetDistributor();
   await minter.sendNft();
-  await minter.sendToThirdParty();
   await minter.regularKeySet();
   await minter.blackholeIssuingAccount();
   await minter.disconnectClient();
