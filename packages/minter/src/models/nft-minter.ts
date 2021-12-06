@@ -34,6 +34,8 @@ export interface MinterConfig {
    * Set the log level for more detailed log outputs. Defaults to 'info'
    */
   logLevel?: log.LogLevelDesc;
+  issuerSecret: string;
+  distributorSecret: string;
 }
 
 export class NftMinter {
@@ -43,7 +45,11 @@ export class NftMinter {
 
   #issuingWallet?: xrpl.Wallet;
 
+  #issuingSecret?: string;
+
   #distributorWallet?: xrpl.Wallet;
+
+  #distributorSecret?: string;
 
   #xrplClient: xrpl.Client;
 
@@ -58,6 +64,8 @@ export class NftMinter {
     metadata,
     clientUri,
     logLevel = 'info',
+    issuerSecret,
+    distributorSecret,
   }: MinterConfig) {
     log.setDefaultLevel(logLevel);
     this.#gravatar = gravatar?.toUpperCase();
@@ -67,6 +75,8 @@ export class NftMinter {
     this.#xrplClient = new xrpl.Client(
       process.env.XRPL_NET || clientUri || 'wss://s.altnet.rippletest.net/'
     );
+    this.#issuingSecret = issuerSecret;
+    this.#distributorSecret = distributorSecret;
   }
 
   async init() {
@@ -88,6 +98,29 @@ export class NftMinter {
         )}`
       )
     );
+
+    if (this.#issuingSecret !== undefined) {
+      this.#issuingWallet = xrpl.Wallet.fromSecret(this.#issuingSecret);
+      log.debug(
+        chalk.yellow(
+          `\nFound issuing wallet...${this.#issuingWallet.classicAddress}`
+        )
+      );
+    } else {
+      await this.createAccount();
+    }
+    if (this.#distributorSecret !== undefined) {
+      this.#distributorWallet = xrpl.Wallet.fromSecret(this.#distributorSecret);
+      log.debug(
+        chalk.yellow(
+          `\nFound distributor wallet...${
+            this.#distributorWallet.classicAddress
+          }`
+        )
+      );
+    } else {
+      await this.createDistributorAccount();
+    }
   }
 
   async createAccount() {
@@ -127,10 +160,12 @@ export class NftMinter {
       Fee: '12',
       SetFlag: 8,
     };
+    console.log(tx);
     log.debug(chalk.yellow('\nConfiguring issuer account...'));
     const response = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
     });
+    console.log(response);
     log.debug(
       `${chalk.greenBright(
         'Configuration successful ✨ tx:'

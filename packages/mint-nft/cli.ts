@@ -50,11 +50,12 @@ async function run() {
 
   const answers = await inquirer.prompt<{
     network: Network;
-    issuerWallet: string | undefined;
-    distributorWallet: string | undefined;
-    meta: string;
+    dangerWalletAtRisk: boolean;
     addIssuerWallet: boolean;
+    issuerSecret: string;
     addDistributorWallet: boolean;
+    distributorSecret: string;
+    meta: string;
     addGravatarHash: boolean;
     gravatarHash: string | undefined;
   }>([
@@ -77,9 +78,30 @@ async function run() {
       when: ({ network }) => network === 'testnet',
     },
     {
+      type: 'confirm',
+      name: 'dangerWalletAtRisk',
+      message:
+        'You have selected the mainnet, as part of this minting process the issuing account will be blackholed (this means you will never be able to use it again to submit any transactions whatsoever, any XRP or other currencies you have in that wallet will be lost. Please accept if you understand, if not then do not proceed any further.',
+      default: false,
+      when: ({ network }) => network === 'mainnet',
+      validate: ({ dangerWalletAtRisk }) => {
+        try {
+          if (dangerWalletAtRisk === true) {
+            console.log('anything?');
+            console.log(dangerWalletAtRisk);
+            return true;
+          } else {
+            throw new Error('Abort the process');
+          }
+        } catch {
+          return 'Abort the process';
+        }
+      },
+    },
+    {
       type: 'input',
-      name: 'issuerWallet',
-      message: 'What is the address of the issuing wallet?',
+      name: 'issuerSecret',
+      message: 'What is the seed of the issuing wallet?',
       default: undefined,
       when: ({ addIssuerWallet, network }) =>
         network === 'mainnet' || addIssuerWallet,
@@ -94,9 +116,8 @@ async function run() {
     },
     {
       type: 'input',
-      name: 'distributorWallet',
-      message:
-        'What is the address of the distributor wallet? If on the testnet, this is not required.',
+      name: 'distributorSecret',
+      message: 'What is the seed of the distributor wallet?',
       default: undefined,
       when: ({ addDistributorWallet, network }) =>
         network === 'mainnet' || addDistributorWallet,
@@ -131,6 +152,8 @@ async function run() {
   ]);
 
   const minter = new NftMinter({
+    issuerSecret: answers.issuerSecret,
+    distributorSecret: answers.distributorSecret,
     gravatar: answers.gravatarHash,
     metadata: answers.meta,
     logLevel: 'debug',
@@ -138,8 +161,6 @@ async function run() {
   });
 
   await minter.init();
-  await minter.createAccount();
-  await minter.createDistributorAccount();
   await minter.accountSet();
   await minter.sendCertification();
   await minter.createTrustLine();
