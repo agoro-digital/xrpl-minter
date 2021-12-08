@@ -90,6 +90,7 @@ export class NftMinter {
         );
       }
     }
+
     await this.#xrplClient.connect();
     log.info(
       chalk.greenBright(

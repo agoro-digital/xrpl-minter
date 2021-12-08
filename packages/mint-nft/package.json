@@ -34,7 +34,8 @@
     "chalk-animation": "^1.6.0",
     "inquirer": "^8.2.0",
     "meow": "^7.1.1",
-    "multiformats": "^9.4.14"
+    "multiformats": "^9.4.14",
+    "xrpl": "^2.0.2"
   },
   "devDependencies": {
     "@types/chalk-animation": "^1.6.1",

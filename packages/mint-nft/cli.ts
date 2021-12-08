@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import chalkAnimation from 'chalk-animation';
 import { CID } from 'multiformats/cid';
 import inquirer from 'inquirer';
+import { isValidSecret } from 'xrpl';
 import { NftMinter } from '@agoro-digital/xrpl-minter';
 
 type Network = 'testnet' | 'mainnet';
@@ -26,12 +27,9 @@ run()
     process.exit(1);
   });
 
-const checkSeed = (seed: string) => {
-  if (seed.length === 29) {
-    return true;
-  }
-  return 'Invalid seed length';
-};
+const isValidSeed = (seed: string) => isValidSecret(seed) || 'Invalid seed.';
+const isTestnet = (network: Network) => network === 'testnet';
+const isMainnet = (network: Network) => network === 'mainnet';
 
 async function run() {
   meow(help, {
@@ -73,18 +71,17 @@ async function run() {
       type: 'confirm',
       name: 'dangerWalletAtRisk',
       message:
-        'You have selected the mainnet, as part of this minting process the issuing account will be blackholed (this means you will never be able to use it again to submit any transactions whatsoever, any XRP or other currencies you have in that wallet will be lost. Please accept if you understand, if not then do not proceed any further.',
+        'As part of this minting process the issuing account will be blackholed (this means you will never be able to use it again to submit any transactions whatsoever, any XRP or other currencies you have in that wallet will be lost). Please accept if you understand, if not then do not proceed any further.',
       default: false,
-      when: ({ network }) => network === 'mainnet',
+      when: ({ network }) => isMainnet(network),
     },
   ]);
 
-  if (networkAnswers.dangerWalletAtRisk === false) {
-    process.exit(1);
+  if (!networkAnswers.dangerWalletAtRisk && isMainnet(networkAnswers.network)) {
+    process.exit(0);
   }
 
   const answers = await inquirer.prompt<{
-    dangerWalletAtRisk: boolean;
     addIssuerWallet: boolean;
     issuerSecret: string;
     addDistributorWallet: boolean;
@@ -99,7 +96,7 @@ async function run() {
       message:
         'Do you wish to add an issuer wallet? If no, one will be created automatically.',
       default: false,
-      when: () => networkAnswers.network === 'testnet',
+      when: () => isTestnet(networkAnswers.network),
     },
     {
       type: 'input',
@@ -107,8 +104,8 @@ async function run() {
       message: 'What is the seed of the issuing wallet?',
       default: undefined,
       when: ({ addIssuerWallet }) =>
-        networkAnswers.network === 'mainnet' || addIssuerWallet,
-      validate: checkSeed,
+        isMainnet(networkAnswers.network) || addIssuerWallet,
+      validate: isValidSeed,
     },
     {
       type: 'confirm',
@@ -116,7 +113,7 @@ async function run() {
       message:
         'Do you wish to add a distributor wallet? If no, one will be created automatically.',
       default: false,
-      when: () => networkAnswers.network === 'testnet',
+      when: () => isTestnet(networkAnswers.network),
     },
     {
       type: 'input',
@@ -124,8 +121,8 @@ async function run() {
       message: 'What is the seed of the distributor wallet?',
       default: undefined,
       when: ({ addDistributorWallet }) =>
-        networkAnswers.network === 'mainnet' || addDistributorWallet,
-      validate: checkSeed,
+        isMainnet(networkAnswers.network) || addDistributorWallet,
+      validate: isValidSeed,
     },
     {
       type: 'input',
@@ -145,9 +142,6 @@ async function run() {
       name: 'addGravatarHash',
       message: 'Do you wish to add a gravatar hash?',
       default: false,
-      when: () =>
-        networkAnswers.network === 'testnet' ||
-        networkAnswers.network === 'mainnet',
     },
     {
       type: 'input',
