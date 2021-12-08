@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": "git@github.com:agoro-digital/xrpl-minter.git",
   "workspaces": [
-    "packages/mint-nft",
+    "packages/cli",
     "packages/minter"
   ],
   "author": {

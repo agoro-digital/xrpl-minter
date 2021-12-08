@@ -4,5 +4,5 @@
 
 > Tool to mint NFTs on the XRP Ledger
 
-Run from cli directly: /projects/xrpl-minter/packages/mint-nft/lib$ node cli.js
+Run from cli directly: /projects/xrpl-minter/packages/cli/lib$ node cli.js
 Use an existing IPFS metadata e.g QmScAChEXeLLqaSTjdKLKiymv4SdB1N5qMQ4eQ8ZR2qqHms

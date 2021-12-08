@@ -11,7 +11,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/agoro-digital/xrpl-minter",
-    "directory": "packages/mint-nft"
+    "directory": "packages/cli"
   },
   "scripts": {
     "build": "parcel build",
