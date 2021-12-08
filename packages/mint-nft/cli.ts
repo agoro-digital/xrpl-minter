@@ -26,6 +26,13 @@ run()
     process.exit(1);
   });
 
+const checkSeed = (seed: string) => {
+  if (seed.length === 29) {
+    return true;
+  }
+  return 'Invalid seed length';
+};
+
 async function run() {
   meow(help, {
     flags: {
@@ -48,16 +55,9 @@ async function run() {
   ledgers.set('testnet', 'wss://s.altnet.rippletest.net/');
   ledgers.set('mainnet', 'wss://xrplcluster.com/');
 
-  const answers = await inquirer.prompt<{
+  const networkAnswers = await inquirer.prompt<{
     network: Network;
     dangerWalletAtRisk: boolean;
-    addIssuerWallet: boolean;
-    issuerSecret: string;
-    addDistributorWallet: boolean;
-    distributorSecret: string;
-    meta: string;
-    addGravatarHash: boolean;
-    gravatarHash: string | undefined;
   }>([
     {
       type: 'list',
@@ -71,40 +71,44 @@ async function run() {
     },
     {
       type: 'confirm',
-      name: 'addIssuerWallet',
-      message:
-        'Do you wish to add an issuer wallet? If no, one will be created automatically.',
-      default: false,
-      when: ({ network }) => network === 'testnet',
-    },
-    {
-      type: 'confirm',
       name: 'dangerWalletAtRisk',
       message:
         'You have selected the mainnet, as part of this minting process the issuing account will be blackholed (this means you will never be able to use it again to submit any transactions whatsoever, any XRP or other currencies you have in that wallet will be lost. Please accept if you understand, if not then do not proceed any further.',
       default: false,
       when: ({ network }) => network === 'mainnet',
-      validate: ({ dangerWalletAtRisk }) => {
-        try {
-          if (dangerWalletAtRisk === true) {
-            console.log('anything?');
-            console.log(dangerWalletAtRisk);
-            return true;
-          } else {
-            throw new Error('Abort the process');
-          }
-        } catch {
-          return 'Abort the process';
-        }
-      },
+    },
+  ]);
+
+  if (networkAnswers.dangerWalletAtRisk === false) {
+    process.exit(1);
+  }
+
+  const answers = await inquirer.prompt<{
+    dangerWalletAtRisk: boolean;
+    addIssuerWallet: boolean;
+    issuerSecret: string;
+    addDistributorWallet: boolean;
+    distributorSecret: string;
+    meta: string;
+    addGravatarHash: boolean;
+    gravatarHash: string | undefined;
+  }>([
+    {
+      type: 'confirm',
+      name: 'addIssuerWallet',
+      message:
+        'Do you wish to add an issuer wallet? If no, one will be created automatically.',
+      default: false,
+      when: () => networkAnswers.network === 'testnet',
     },
     {
       type: 'input',
       name: 'issuerSecret',
       message: 'What is the seed of the issuing wallet?',
       default: undefined,
-      when: ({ addIssuerWallet, network }) =>
-        network === 'mainnet' || addIssuerWallet,
+      when: ({ addIssuerWallet }) =>
+        networkAnswers.network === 'mainnet' || addIssuerWallet,
+      validate: checkSeed,
     },
     {
       type: 'confirm',
@@ -112,15 +116,16 @@ async function run() {
       message:
         'Do you wish to add a distributor wallet? If no, one will be created automatically.',
       default: false,
-      when: ({ network }) => network === 'testnet',
+      when: () => networkAnswers.network === 'testnet',
     },
     {
       type: 'input',
       name: 'distributorSecret',
       message: 'What is the seed of the distributor wallet?',
       default: undefined,
-      when: ({ addDistributorWallet, network }) =>
-        network === 'mainnet' || addDistributorWallet,
+      when: ({ addDistributorWallet }) =>
+        networkAnswers.network === 'mainnet' || addDistributorWallet,
+      validate: checkSeed,
     },
     {
       type: 'input',
@@ -140,7 +145,9 @@ async function run() {
       name: 'addGravatarHash',
       message: 'Do you wish to add a gravatar hash?',
       default: false,
-      when: ({ network }) => network === 'testnet' || network === 'mainnet',
+      when: () =>
+        networkAnswers.network === 'testnet' ||
+        networkAnswers.network === 'mainnet',
     },
     {
       type: 'input',
@@ -157,7 +164,7 @@ async function run() {
     gravatar: answers.gravatarHash,
     metadata: answers.meta,
     logLevel: 'debug',
-    clientUri: ledgers.get(answers.network),
+    clientUri: ledgers.get(networkAnswers.network),
   });
 
   await minter.init();

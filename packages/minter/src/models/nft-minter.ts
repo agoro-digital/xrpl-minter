@@ -157,15 +157,16 @@ export class NftMinter {
       Account: this.#issuingWallet.classicAddress,
       Domain: xrpl.convertStringToHex(`hash:${this.#metadata}`),
       ...(this.#gravatar && { EmailHash: this.#gravatar }),
-      Fee: '12',
       SetFlag: 8,
+      Fee: '200',
     };
-    console.log(tx);
+
+    const preparedTx = await this.#xrplClient.prepareTransaction(tx);
+    console.log(preparedTx);
     log.debug(chalk.yellow('\nConfiguring issuer account...'));
     const response = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
     });
-    console.log(response);
     log.debug(
       `${chalk.greenBright(
         'Configuration successful ✨ tx:'
@@ -225,6 +226,7 @@ export class NftMinter {
           'PrimaryUri'
         ),
       ],
+      Fee: '100',
     };
 
     log.debug(
@@ -272,6 +274,7 @@ export class NftMinter {
         value:
           '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
       },
+      Fee: '100',
     };
     log.debug(
       chalk.yellow(
@@ -301,7 +304,7 @@ export class NftMinter {
       TransactionType: 'AccountSet',
       Account: this.#distributorWallet.classicAddress,
       Domain: xrpl.convertStringToHex(`kapcher-staging.herokuapp.com`),
-      Fee: '12',
+      Fee: '100',
     };
     log.debug(chalk.yellow('\nConfiguring distributor account...'));
     const response = await this.#xrplClient.submitAndWait(tx, {
@@ -333,6 +336,7 @@ export class NftMinter {
       },
       Destination: this.#distributorWallet.classicAddress,
       TransactionType: 'Payment',
+      Fee: '100',
     };
     log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
     const res = await this.#xrplClient.submitAndWait(tx, {
@@ -352,6 +356,7 @@ export class NftMinter {
       TransactionType: 'SetRegularKey',
       Account: this.#issuingWallet?.classicAddress as string,
       RegularKey: 'rrrrrrrrrrrrrrrrrrrrBZbvji',
+      Fee: '100',
     };
     log.debug(chalk.yellow('\nSetting regular key for issuing account...'));
     const res = await this.#xrplClient.submitAndWait(tx, {
