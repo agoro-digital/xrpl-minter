@@ -1,5 +1,4 @@
 {
   "files": [],
-  "references": [{ "path": "packages/minter" }, { "path": "packages/cli" }],
-  "moduleResolution": "node"
+  "references": [{ "path": "./packages/minter" }, { "path": "./packages/cli" }]
 }
