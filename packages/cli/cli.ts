@@ -181,15 +181,5 @@ async function run() {
     clientUri: ledgers.get(networkAnswers.network),
   });
 
-  await minter.init();
-  await minter.accountSet();
-  await minter.sendCertification();
-  await minter.createTrustLine();
-  if (answers.distributorDomain) {
-    await minter.accountSetDistributor();
-  }
-  await minter.sendNft();
-  await minter.regularKeySet();
-  await minter.blackholeIssuingAccount();
-  await minter.disconnectClient();
+  await minter.mint();
 }

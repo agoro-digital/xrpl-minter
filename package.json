@@ -1,7 +1,7 @@
 {
   "name": "xrpl-minter",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
   "repository": "git@github.com:agoro-digital/xrpl-minter.git",
   "workspaces": [

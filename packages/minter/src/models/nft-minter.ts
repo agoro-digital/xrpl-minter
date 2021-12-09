@@ -132,6 +132,26 @@ export class NftMinter {
     }
   }
 
+  async mint() {
+    try {
+      await this.init();
+      await this.accountSet();
+      await this.sendCertification();
+      await this.createTrustLine();
+      if (this.#distributorDomain) {
+        await this.accountSetDistributor();
+      }
+      await this.sendNft();
+      await this.regularKeySet();
+      await this.blackholeIssuingAccount();
+      await this.disconnectClient();
+    } catch (error: unknown) {
+      if (isError(error)) {
+        log.error(chalk.red(error.message));
+      }
+    }
+  }
+
   async createAccount() {
     log.debug(chalk.yellow('\nCreating issuing wallet...'));
     const response = await this.#xrplClient.fundWallet();
