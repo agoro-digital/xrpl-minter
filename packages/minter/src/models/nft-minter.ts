@@ -36,6 +36,7 @@ export interface MinterConfig {
   logLevel?: log.LogLevelDesc;
   issuerSecret: string;
   distributorSecret: string;
+  distributorDomain?: string;
 }
 
 export class NftMinter {
@@ -50,6 +51,8 @@ export class NftMinter {
   #distributorWallet?: xrpl.Wallet;
 
   #distributorSecret?: string;
+
+  #distributorDomain?: string;
 
   #xrplClient: xrpl.Client;
 
@@ -66,9 +69,11 @@ export class NftMinter {
     logLevel = 'info',
     issuerSecret,
     distributorSecret,
+    distributorDomain,
   }: MinterConfig) {
     log.setDefaultLevel(logLevel);
     this.#gravatar = gravatar?.toUpperCase();
+    this.#distributorDomain = distributorDomain;
     this.#metadata = metadata;
     this.#issuingWallet = undefined;
     this.#distributorWallet = undefined;
@@ -132,7 +137,7 @@ export class NftMinter {
     const response = await this.#xrplClient.fundWallet();
     this.#issuingWallet = response.wallet;
     log.info(
-      `${chalk.greenBright('Created issuing wallet ✨')}: ${chalk.underline(
+      `${chalk.greenBright('Created issuing wallet ✨ tx:')}: ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           this.#issuingWallet.classicAddress
         }`
@@ -146,7 +151,9 @@ export class NftMinter {
     this.#distributorWallet = response.wallet;
 
     log.info(
-      `${chalk.greenBright('Created distributor wallet ✨')}: ${chalk.underline(
+      `${chalk.greenBright(
+        'Created distributor wallet ✨ tx:'
+      )}: ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           this.#distributorWallet.classicAddress
         }`
@@ -155,7 +162,7 @@ export class NftMinter {
   }
 
   async accountSet() {
-    invariant(this.#issuingWallet);
+    invariant(this.#issuingWallet, 'No issuing wallet found.');
     const tx: xrpl.AccountSet = {
       TransactionType: 'AccountSet',
       Account: this.#issuingWallet.classicAddress,
@@ -202,9 +209,9 @@ export class NftMinter {
   }
 
   async sendCertification() {
-    invariant(this.#issuingWallet);
-    invariant(this.#distributorWallet);
-    invariant(this.#metadataInfo);
+    invariant(this.#issuingWallet, 'No issuing wallet found');
+    invariant(this.#distributorWallet, 'No distributing wallet found');
+    invariant(this.#metadataInfo, 'no meta data found');
 
     const tx: xrpl.Payment = {
       Account: this.#issuingWallet.classicAddress,
@@ -263,7 +270,7 @@ export class NftMinter {
   }
 
   async createTrustLine() {
-    invariant(this.#metadataInfo);
+    invariant(this.#metadataInfo, 'No meta data info found');
     this.#issuedCurrencyCode = generateCurrencyCode(
       this.#cti as BigInt,
       this.#metadataInfo?.name
@@ -287,8 +294,8 @@ export class NftMinter {
     const res = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#distributorWallet,
     });
-    invariant(this.#issuingWallet);
-    invariant(this.#distributorWallet);
+    invariant(this.#issuingWallet, 'No issuing wallet found');
+    invariant(this.#distributorWallet, 'No distributor wallet found');
     log.info(
       `${chalk.greenBright(
         'Trustline creation successful ✨ tx:'
@@ -301,12 +308,13 @@ export class NftMinter {
   }
 
   async accountSetDistributor() {
-    invariant(this.#distributorWallet);
+    invariant(this.#distributorWallet, 'No distributor wallet found');
+    invariant(this.#distributorDomain, 'No distributor domain found');
 
     const tx: xrpl.AccountSet = {
       TransactionType: 'AccountSet',
       Account: this.#distributorWallet.classicAddress,
-      Domain: xrpl.convertStringToHex(`kapcher-staging.herokuapp.com`),
+      Domain: xrpl.convertStringToHex(this.#distributorDomain),
     };
     log.debug(chalk.yellow('\nConfiguring distributor account...'));
 
@@ -327,9 +335,9 @@ export class NftMinter {
   }
 
   async sendNft() {
-    invariant(this.#issuingWallet);
-    invariant(this.#distributorWallet);
-    invariant(this.#issuedCurrencyCode);
+    invariant(this.#issuingWallet, 'No issueing wallet found');
+    invariant(this.#distributorWallet, 'No distributor wallet found');
+    invariant(this.#issuedCurrencyCode, 'No issued currency code found');
 
     const tx: xrpl.Payment = {
       Account: this.#issuingWallet.classicAddress,
@@ -393,7 +401,7 @@ export class NftMinter {
     });
     log.info(
       `${chalk.greenBright(
-        'Master key removed and issuing account blackholed! 🛸'
+        'Master key removed and issuing account blackholed! 🛸 tx:'
       )} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           res.result.hash

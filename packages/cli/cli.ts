@@ -92,7 +92,9 @@ async function run() {
     distributorSecret: string;
     meta: string;
     addGravatarHash: boolean;
-    gravatarHash: string | undefined;
+    addDistributorDomain: boolean;
+    gravatarHash?: string;
+    distributorDomain?: string;
   }>([
     {
       type: 'confirm',
@@ -150,15 +152,29 @@ async function run() {
     {
       type: 'input',
       name: 'gravatarHash',
-      message: 'What is the gravatar hash?',
+      message: 'Enter the gravatar hash',
       default: undefined,
       when: ({ addGravatarHash }) => addGravatarHash,
+    },
+    {
+      type: 'confirm',
+      name: 'addDistributorDomain',
+      message: 'Do you wish to add a distributor domain for validation?',
+      default: false,
+    },
+    {
+      type: 'input',
+      name: 'distributorDomain',
+      message: 'Enter the distributor domain',
+      default: undefined,
+      when: ({ addDistributorDomain }) => addDistributorDomain,
     },
   ]);
 
   const minter = new NftMinter({
     issuerSecret: answers.issuerSecret,
     distributorSecret: answers.distributorSecret,
+    distributorDomain: answers.distributorDomain,
     gravatar: answers.gravatarHash,
     metadata: answers.meta,
     logLevel: cli.flags.logLevel as LogLevelDesc,
@@ -169,7 +185,9 @@ async function run() {
   await minter.accountSet();
   await minter.sendCertification();
   await minter.createTrustLine();
-  await minter.accountSetDistributor();
+  if (answers.distributorDomain) {
+    await minter.accountSetDistributor();
+  }
   await minter.sendNft();
   await minter.regularKeySet();
   await minter.blackholeIssuingAccount();
