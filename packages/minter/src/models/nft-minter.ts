@@ -357,7 +357,7 @@ export class NftMinter {
       wallet: this.#issuingWallet,
     });
     log.info(
-      `${chalk.greenBright('Sucessfully sent NFT/S 🚀 tx:')} ${chalk.underline(
+      `${chalk.greenBright('Successfully sent NFT/S 🚀 tx:')} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           res.result.hash
         }}`
@@ -379,7 +379,7 @@ export class NftMinter {
     });
     log.info(
       `${chalk.greenBright(
-        'Sucessfully set regular key for issuing account ✨ tx:'
+        'Successfully set regular key for issuing account ✨ tx:'
       )} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           res.result.hash
