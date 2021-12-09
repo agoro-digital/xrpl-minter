@@ -6,6 +6,7 @@ import { CID } from 'multiformats/cid';
 import inquirer from 'inquirer';
 import { isValidSecret } from 'xrpl';
 import { NftMinter } from '@agoro-digital/xrpl-minter';
+import type { LogLevelDesc } from 'loglevel';
 
 type Network = 'testnet' | 'mainnet';
 
@@ -16,6 +17,7 @@ const help = `
   Flags:
     --help, -h          Show this help message
     --version, -v       Show the version of this script
+    --logLevel, -l      Set the log level of the CLI tool
 `;
 
 run()
@@ -32,10 +34,11 @@ const isTestnet = (network: Network) => network === 'testnet';
 const isMainnet = (network: Network) => network === 'mainnet';
 
 async function run() {
-  meow(help, {
+  const cli = meow(help, {
     flags: {
       help: { type: 'boolean', default: false, alias: 'h' },
       version: { type: 'boolean', default: false, alias: 'v' },
+      logLevel: { type: 'string', default: 'info', alias: 'l' },
     },
   });
 
@@ -70,8 +73,9 @@ async function run() {
     {
       type: 'confirm',
       name: 'dangerWalletAtRisk',
-      message:
-        'As part of this minting process the issuing account will be blackholed (this means you will never be able to use it again to submit any transactions whatsoever, any XRP or other currencies you have in that wallet will be lost). Please accept if you understand, if not then do not proceed any further.',
+      message: chalk.yellow(
+        'WARNING: As part of this minting process the issuing account will be blackholed (this means you will never be able to use it again to submit any transactions whatsoever, any XRP or other currencies you have in that wallet will be lost). Please accept if you understand, if not then do not proceed any further.'
+      ),
       default: false,
       when: ({ network }) => isMainnet(network),
     },
@@ -157,7 +161,7 @@ async function run() {
     distributorSecret: answers.distributorSecret,
     gravatar: answers.gravatarHash,
     metadata: answers.meta,
-    logLevel: 'debug',
+    logLevel: cli.flags.logLevel as LogLevelDesc,
     clientUri: ledgers.get(networkAnswers.network),
   });
 

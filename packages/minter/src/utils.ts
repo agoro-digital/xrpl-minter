@@ -23,13 +23,13 @@ function validateMetaResponse(res?: unknown): res is MetadataInfo {
   result.fold(
     e => {
       log.error(
-        chalk.red('\n error validating meta response from IFPS –'),
+        chalk.red('\n error validating meta response from IPFS –'),
         e,
         '\n'
       );
       throw new Error('Meta data not valid');
     },
-    x => log.debug(chalk.greenBright('Found meta data from IFPS – '), x)
+    x => log.debug(chalk.greenBright('Found meta data from IPFS – '), x)
   );
   return !result.isFail;
 }
@@ -105,23 +105,3 @@ export function determineXrplArtUri(
 
   return baseUri.toString();
 }
-
-// function ctiIsSimple(cti) {
-//   return cti >> 56n == 0;
-// }
-
-// function ctiTransactionIndex(cti) {
-//   return (cti >> 32n) & 0xffffn;
-// }
-
-// function ctiLedgerIndex(cti) {
-//   return cti & 0xffffffffn;
-// }
-
-// function ctiLedgerCheck(cti) {
-//   return (cti >> 52n) & 0xfn;
-// }
-
-// function ctiTransactionCheck(cti) {
-//   return (cti >> 48n) & 0xfn;
-// }

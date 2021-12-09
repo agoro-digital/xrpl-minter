@@ -73,7 +73,10 @@ export class NftMinter {
     this.#issuingWallet = undefined;
     this.#distributorWallet = undefined;
     this.#xrplClient = new xrpl.Client(
-      process.env.XRPL_NET || clientUri || 'wss://s.altnet.rippletest.net/'
+      process.env.XRPL_NET || clientUri || 'wss://s.altnet.rippletest.net/',
+      {
+        maxFeeXRP: '0.00005',
+      }
     );
     this.#issuingSecret = issuerSecret;
     this.#distributorSecret = distributorSecret;
@@ -102,8 +105,8 @@ export class NftMinter {
 
     if (this.#issuingSecret !== undefined) {
       this.#issuingWallet = xrpl.Wallet.fromSecret(this.#issuingSecret);
-      log.debug(
-        chalk.yellow(
+      log.info(
+        chalk.greenBright(
           `\nFound issuing wallet...${this.#issuingWallet.classicAddress}`
         )
       );
@@ -112,8 +115,8 @@ export class NftMinter {
     }
     if (this.#distributorSecret !== undefined) {
       this.#distributorWallet = xrpl.Wallet.fromSecret(this.#distributorSecret);
-      log.debug(
-        chalk.yellow(
+      log.info(
+        chalk.greenBright(
           `\nFound distributor wallet...${
             this.#distributorWallet.classicAddress
           }`
@@ -128,7 +131,7 @@ export class NftMinter {
     log.debug(chalk.yellow('\nCreating issuing wallet...'));
     const response = await this.#xrplClient.fundWallet();
     this.#issuingWallet = response.wallet;
-    log.debug(
+    log.info(
       `${chalk.greenBright('Created issuing wallet ✨')}: ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           this.#issuingWallet.classicAddress
@@ -142,7 +145,7 @@ export class NftMinter {
     const response = await this.#xrplClient.fundWallet();
     this.#distributorWallet = response.wallet;
 
-    log.debug(
+    log.info(
       `${chalk.greenBright('Created distributor wallet ✨')}: ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           this.#distributorWallet.classicAddress
@@ -159,18 +162,16 @@ export class NftMinter {
       Domain: xrpl.convertStringToHex(`hash:${this.#metadata}`),
       ...(this.#gravatar && { EmailHash: this.#gravatar }),
       SetFlag: 8,
-      Fee: '200',
     };
 
-    const preparedTx = await this.#xrplClient.prepareTransaction(tx);
-    console.log(preparedTx);
+    const preparedTx = await this.#xrplClient.autofill(tx);
     log.debug(chalk.yellow('\nConfiguring issuer account...'));
-    const response = await this.#xrplClient.submitAndWait(tx, {
+    const response = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#issuingWallet,
     });
-    log.debug(
+    log.info(
       `${chalk.greenBright(
-        'Configuration successful ✨ tx:'
+        'Issuing account configured ✨ tx:'
       )} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           response.result.hash
@@ -227,7 +228,6 @@ export class NftMinter {
           'PrimaryUri'
         ),
       ],
-      Fee: '100',
     };
 
     log.debug(
@@ -235,10 +235,12 @@ export class NftMinter {
         '\nSending certification payment from issuer to distributor...'
       )
     );
-    const payment = await this.#xrplClient.submitAndWait(tx, {
+
+    const preparedTx = await this.#xrplClient.autofill(tx);
+    const payment = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#issuingWallet,
     });
-    log.debug(
+    log.info(
       `${chalk.greenBright(
         'Certification payment successful ✨ tx:'
       )} ${chalk.underline(
@@ -275,19 +277,19 @@ export class NftMinter {
         value:
           '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
       },
-      Fee: '100',
     };
     log.debug(
       chalk.yellow(
         '\nCreating a trustline between the distributor and issuer wallets...'
       )
     );
-    const res = await this.#xrplClient.submitAndWait(tx, {
+    const preparedTx = await this.#xrplClient.autofill(tx);
+    const res = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#distributorWallet,
     });
     invariant(this.#issuingWallet);
     invariant(this.#distributorWallet);
-    log.debug(
+    log.info(
       `${chalk.greenBright(
         'Trustline creation successful ✨ tx:'
       )} ${chalk.underline(
@@ -305,15 +307,17 @@ export class NftMinter {
       TransactionType: 'AccountSet',
       Account: this.#distributorWallet.classicAddress,
       Domain: xrpl.convertStringToHex(`kapcher-staging.herokuapp.com`),
-      Fee: '100',
     };
     log.debug(chalk.yellow('\nConfiguring distributor account...'));
-    const response = await this.#xrplClient.submitAndWait(tx, {
+
+    const preparedTx = await this.#xrplClient.autofill(tx);
+
+    const response = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#distributorWallet,
     });
-    log.debug(
+    log.info(
       `${chalk.greenBright(
-        'Configuration successful ✨ tx:'
+        'Distributor wallet configuration successful ✨ tx:'
       )} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           response.result.hash
@@ -337,13 +341,14 @@ export class NftMinter {
       },
       Destination: this.#distributorWallet.classicAddress,
       TransactionType: 'Payment',
-      Fee: '100',
     };
     log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
-    const res = await this.#xrplClient.submitAndWait(tx, {
+
+    const preparedTx = await this.#xrplClient.autofill(tx);
+    const res = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#issuingWallet,
     });
-    log.debug(
+    log.info(
       `${chalk.greenBright('Sucessfully sent NFT/S 🚀 tx:')} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
           res.result.hash
@@ -357,13 +362,14 @@ export class NftMinter {
       TransactionType: 'SetRegularKey',
       Account: this.#issuingWallet?.classicAddress as string,
       RegularKey: 'rrrrrrrrrrrrrrrrrrrrBZbvji',
-      Fee: '100',
     };
     log.debug(chalk.yellow('\nSetting regular key for issuing account...'));
-    const res = await this.#xrplClient.submitAndWait(tx, {
+
+    const preparedTx = await this.#xrplClient.autofill(tx);
+    const res = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#issuingWallet,
     });
-    log.debug(
+    log.info(
       `${chalk.greenBright(
         'Sucessfully set regular key for issuing account ✨ tx:'
       )} ${chalk.underline(
@@ -385,7 +391,7 @@ export class NftMinter {
     const res = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
     });
-    log.debug(
+    log.info(
       `${chalk.greenBright(
         'Master key removed and issuing account blackholed! 🛸'
       )} ${chalk.underline(
@@ -397,7 +403,7 @@ export class NftMinter {
   }
 
   async disconnectClient() {
-    log.debug(
+    log.info(
       `\n${chalk.greenBright('NFT minting complete:')} ${chalk.underline(
         determineXrplArtUri(
           this.#xrplClient.connection.getUrl(),
