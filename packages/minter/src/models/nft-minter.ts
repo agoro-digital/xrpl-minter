@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as xrpl from 'xrpl';
 import log from 'loglevel';
 import invariant from 'tiny-invariant';
@@ -283,7 +281,7 @@ export class NftMinter {
     this.#cti = ctiEncode(
       payment.result.hash,
       //@ts-expect-error - error
-      payment.result.meta.TransactionIndex,
+      payment.result.meta.TransactionIndex as number,
       ledger_hash,
       payment.result.ledger_index as number
     );
@@ -444,6 +442,3 @@ export class NftMinter {
     log.info(chalk.greenBright('\nClient disconnected'));
   }
 }
-
-/* eslint-enable @typescript-eslint/no-unsafe-member-access */
-/* eslint-enable @typescript-eslint/no-unsafe-argument */
