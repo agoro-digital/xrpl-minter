@@ -1,5 +1,7 @@
 # Mint NFT CLI tool
 
+[![CircleCI](https://circleci.com/gh/agoro-digital/xrpl-minter/tree/main.svg?style=svg)](https://circleci.com/gh/agoro-digital/xrpl-minter/tree/main)
+
 > A Command line tool to mint NFTs on the XRP Ledger. Simplifying access to XRP Ledger fans for the creation of their own Xrp Ledger nfts.
 
 ## Running the tool
