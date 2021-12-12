@@ -49,7 +49,7 @@ Test net will auto generate your issuing wallet and distributor wallet (you can 
 
 ## Main net
 
-### Beware if you are using main net, as part of this process the issuing wallet will be blackholed, please note you will be asked to confirm your understanding of this situation when using the cli tool. Agoro Digital accept no liability or responsibility for your actions when using this tool.
+**Beware if you are using main net, as part of this process the issuing wallet will be blackholed, please note you will be asked to confirm your understanding of this situation when using the cli tool. Agoro Digital accept no liability or responsibility for your actions when using this tool.**
 
 You will require a seed for both issuing and distirbutor address (29 character long alpha numeric secret key).
 
