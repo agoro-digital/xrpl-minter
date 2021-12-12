@@ -12,9 +12,11 @@ npx @agoro-digital/mint-nft
 
 The tool can be run with the following flags:
 
-help: -h',
-version: -v,
-logLevel: -l debug/info(default),
+```
+--help: -h – show the available commands in the terminal.
+--version: -v – Display the current version of the tool
+--logLevel: -l – Set the level of logging output in the terminal. Defaults to info.
+```
 
 ## What does it do?
 
