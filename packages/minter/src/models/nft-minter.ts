@@ -25,15 +25,33 @@ export interface MetadataInfo {
 }
 
 export interface MinterConfig {
+  /**
+   * A gravatar hash, used to visualize the NFT in Bithomp.
+   */
   gravatar?: string;
+  /**
+   * The CID for the metadata file in IPFS.
+   */
   metadata: string;
+  /**
+   * The URI for the XRPL client to connect to.
+   */
   clientUri?: string;
   /**
-   * Set the log level for more detailed log outputs. Defaults to 'info'
+   * Set the log level for more detailed log outputs. Defaults to `info`
    */
   logLevel?: log.LogLevelDesc;
+  /**
+   * The Secret for the issuer wallet
+   */
   issuerSecret: string;
+  /**
+   * The Secret for the distributor wallet
+   */
   distributorSecret: string;
+  /**
+   * The Distributor wallet domain. This is used to validate the NFT in the XRPL
+   */
   distributorDomain?: string;
 }
 
@@ -85,6 +103,11 @@ export class NftMinter {
     this.#distributorSecret = distributorSecret;
   }
 
+  /**
+   * Initialize the Minter. This will connect to the XRPL ledger, as well as handingle the retrieval of the issuer and distributor wallets. This method MUST be called if manually composing the minting process.
+   *
+   * * @see {@link mint} If you want a simple mint. This handles the initialization process for you.
+   */
   async init() {
     try {
       const meta = await getIpfsMeta(this.#metadata);
@@ -130,6 +153,9 @@ export class NftMinter {
     }
   }
 
+  /**
+   * Runs all the steps required to mint an NFT on the XRP Ledger. If using this method, there is no need to call {@link init} before.
+   */
   async mint() {
     try {
       await this.init();
