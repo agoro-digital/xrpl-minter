@@ -119,3 +119,6 @@ dist
 
 # Compiled code
 lib/
+
+# Turbo
+.turbo
