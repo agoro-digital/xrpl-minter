@@ -1,6 +1,6 @@
 {
   "name": "@agoro-digital/xrpl-minter",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Mint NFTS on the XRP Ledger",
   "main": "lib/index.js",
   "source": "src/index.ts",
