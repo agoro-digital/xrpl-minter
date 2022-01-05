@@ -1,4 +1,6 @@
 import { convertStringToHex } from 'xrpl';
+import type { TrustSet, Payment } from 'xrpl';
+import * as codec from 'ripple-binary-codec';
 import log from 'loglevel';
 import chalk from 'chalk';
 import axios from 'axios';
@@ -105,3 +107,8 @@ export function determineXrplArtUri(
 
   return baseUri.toString();
 }
+
+export const correctlyPrepareTx = (tx: TrustSet | Payment) => {
+  const encoded = codec.encode(tx);
+  return codec.decode(encoded);
+};

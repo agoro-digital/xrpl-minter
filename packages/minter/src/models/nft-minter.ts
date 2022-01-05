@@ -10,9 +10,12 @@ import {
   generateCurrencyCode,
   getIpfsMeta,
   isError,
+  correctlyPrepareTx,
 } from '../utils';
 
 dotenv.config();
+
+const INDIVISIBLE_XRP_VALUE = 1e-81;
 
 export interface MetadataProperties {
   author: string;
@@ -53,6 +56,10 @@ export interface MinterConfig {
    * The Distributor wallet domain. This is used to validate the NFT in the XRPL
    */
   distributorDomain?: string;
+  /**
+   * The amount of Tokens to mint.
+   */
+  numberToCreate?: number;
 }
 
 export class NftMinter {
@@ -76,6 +83,8 @@ export class NftMinter {
 
   #issuedCurrencyCode?: string;
 
+  #numberToCreate?: number;
+
   #metadataInfo?: MetadataInfo;
 
   constructor({
@@ -86,6 +95,7 @@ export class NftMinter {
     issuerSecret,
     distributorSecret,
     distributorDomain,
+    numberToCreate,
   }: MinterConfig) {
     log.setDefaultLevel(logLevel);
     this.#gravatar = gravatar?.toUpperCase();
@@ -101,6 +111,7 @@ export class NftMinter {
     );
     this.#issuingSecret = issuerSecret;
     this.#distributorSecret = distributorSecret;
+    this.#numberToCreate = numberToCreate;
   }
 
   /**
@@ -215,10 +226,11 @@ export class NftMinter {
       SetFlag: 8,
     };
 
-    const preparedTx = await this.#xrplClient.autofill(tx);
     log.debug(chalk.yellow('\nConfiguring issuer account...'));
-    const response = await this.#xrplClient.submitAndWait(preparedTx, {
+
+    const response = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
+      autofill: true,
     });
     log.info(
       `${chalk.greenBright(
@@ -287,9 +299,9 @@ export class NftMinter {
       )
     );
 
-    const preparedTx = await this.#xrplClient.autofill(tx);
-    const payment = await this.#xrplClient.submitAndWait(preparedTx, {
+    const payment = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
+      autofill: true,
     });
     log.info(
       `${chalk.greenBright(
@@ -319,14 +331,17 @@ export class NftMinter {
       this.#cti as BigInt,
       this.#metadataInfo?.name
     ).toString();
+
     const tx: xrpl.TrustSet = {
       TransactionType: 'TrustSet',
       Account: this.#distributorWallet?.classicAddress || '',
       LimitAmount: {
         currency: this.#issuedCurrencyCode,
         issuer: this.#issuingWallet?.classicAddress || '',
-        value:
-          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+        value: (
+          INDIVISIBLE_XRP_VALUE *
+          (this.#numberToCreate ? this.#numberToCreate : 1)
+        ).toString(),
       },
     };
     log.debug(
@@ -334,10 +349,13 @@ export class NftMinter {
         '\nCreating a trustline between the distributor and issuer wallets...'
       )
     );
-    const preparedTx = await this.#xrplClient.autofill(tx);
-    const res = await this.#xrplClient.submitAndWait(preparedTx, {
-      wallet: this.#distributorWallet,
-    });
+    const res = await this.#xrplClient.submitAndWait(
+      correctlyPrepareTx(tx) as unknown as string,
+      {
+        wallet: this.#distributorWallet,
+        autofill: true,
+      }
+    );
     invariant(this.#issuingWallet, 'No issuing wallet found');
     invariant(this.#distributorWallet, 'No distributor wallet found');
     log.info(
@@ -362,10 +380,9 @@ export class NftMinter {
     };
     log.debug(chalk.yellow('\nConfiguring distributor account...'));
 
-    const preparedTx = await this.#xrplClient.autofill(tx);
-
-    const response = await this.#xrplClient.submitAndWait(preparedTx, {
+    const response = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#distributorWallet,
+      autofill: true,
     });
     log.info(
       `${chalk.greenBright(
@@ -388,18 +405,23 @@ export class NftMinter {
       Amount: {
         issuer: this.#issuingWallet.classicAddress,
         currency: this.#issuedCurrencyCode,
-        value:
-          '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001',
+        value: (
+          INDIVISIBLE_XRP_VALUE *
+          (this.#numberToCreate ? this.#numberToCreate : 1)
+        ).toString(),
       },
       Destination: this.#distributorWallet.classicAddress,
       TransactionType: 'Payment',
     };
     log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
 
-    const preparedTx = await this.#xrplClient.autofill(tx);
-    const res = await this.#xrplClient.submitAndWait(preparedTx, {
-      wallet: this.#issuingWallet,
-    });
+    const res = await this.#xrplClient.submitAndWait(
+      correctlyPrepareTx(tx) as unknown as string,
+      {
+        wallet: this.#issuingWallet,
+        autofill: true,
+      }
+    );
     log.info(
       `${chalk.greenBright('Successfully sent NFT/S 🚀 tx:')} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
@@ -417,9 +439,9 @@ export class NftMinter {
     };
     log.debug(chalk.yellow('\nSetting regular key for issuing account...'));
 
-    const preparedTx = await this.#xrplClient.autofill(tx);
-    const res = await this.#xrplClient.submitAndWait(preparedTx, {
+    const res = await this.#xrplClient.submitAndWait(tx, {
       wallet: this.#issuingWallet,
+      autofill: true,
     });
     log.info(
       `${chalk.greenBright(
