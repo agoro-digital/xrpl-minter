@@ -86,7 +86,6 @@ async function run() {
   }
 
   const answers = await inquirer.prompt<{
-    numberToCreate: number;
     addIssuerWallet: boolean;
     issuerSecret: string;
     addDistributorWallet: boolean;
@@ -97,18 +96,6 @@ async function run() {
     gravatarHash?: string;
     distributorDomain?: string;
   }>([
-    {
-      type: 'input',
-      name: 'numberToCreate',
-      message: 'How many tokens do you wish to create?',
-      validate: function (value) {
-        const pass = !Number.isNaN(value);
-        if (pass) {
-          return true;
-        }
-        return 'Please enter a number';
-      },
-    },
     {
       type: 'confirm',
       name: 'addIssuerWallet',
@@ -192,7 +179,6 @@ async function run() {
     metadata: answers.meta,
     logLevel: cli.flags.logLevel as LogLevelDesc,
     clientUri: ledgers.get(networkAnswers.network),
-    numberToCreate: answers.numberToCreate,
   });
 
   await minter.mint();

@@ -107,8 +107,3 @@ export function determineXrplArtUri(
 
   return baseUri.toString();
 }
-
-export const correctlyPrepareTx = (tx: TrustSet | Payment) => {
-  const encoded = codec.encode(tx);
-  return codec.decode(encoded);
-};

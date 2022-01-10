@@ -10,13 +10,12 @@ import {
   generateCurrencyCode,
   getIpfsMeta,
   isError,
-  correctlyPrepareTx,
 } from '../utils';
 
 dotenv.config();
 
-const INDIVISIBLE_XRP_VALUE = 1e-81;
-
+const INDIVISIBLE_XRP_VALUE =
+  '0.000000000000000000000000000000000000000000000000000000000000000000000000000000001';
 export interface MetadataProperties {
   author: string;
 }
@@ -83,9 +82,11 @@ export class NftMinter {
 
   #issuedCurrencyCode?: string;
 
-  #numberToCreate?: number;
+  #numberToCreate: number;
 
   #metadataInfo?: MetadataInfo;
+
+  #value: string;
 
   constructor({
     gravatar,
@@ -95,7 +96,7 @@ export class NftMinter {
     issuerSecret,
     distributorSecret,
     distributorDomain,
-    numberToCreate,
+    numberToCreate = 1,
   }: MinterConfig) {
     log.setDefaultLevel(logLevel);
     this.#gravatar = gravatar?.toUpperCase();
@@ -112,6 +113,11 @@ export class NftMinter {
     this.#issuingSecret = issuerSecret;
     this.#distributorSecret = distributorSecret;
     this.#numberToCreate = numberToCreate;
+    this.#value =
+      INDIVISIBLE_XRP_VALUE.slice(
+        0,
+        numberToCreate ? 83 - numberToCreate.toString().length : 83
+      ) + this.#numberToCreate.toString();
   }
 
   /**
@@ -120,6 +126,7 @@ export class NftMinter {
    * * @see {@link mint} If you want a simple mint. This handles the initialization process for you.
    */
   async init() {
+    console.log(this.#value);
     try {
       const meta = await getIpfsMeta(this.#metadata);
       this.#metadataInfo = meta.data;
@@ -338,10 +345,7 @@ export class NftMinter {
       LimitAmount: {
         currency: this.#issuedCurrencyCode,
         issuer: this.#issuingWallet?.classicAddress || '',
-        value: (
-          INDIVISIBLE_XRP_VALUE *
-          (this.#numberToCreate ? this.#numberToCreate : 1)
-        ).toString(),
+        value: this.#value,
       },
     };
     log.debug(
@@ -349,13 +353,12 @@ export class NftMinter {
         '\nCreating a trustline between the distributor and issuer wallets...'
       )
     );
-    const res = await this.#xrplClient.submitAndWait(
-      correctlyPrepareTx(tx) as unknown as string,
-      {
-        wallet: this.#distributorWallet,
-        autofill: true,
-      }
-    );
+
+    const preparedTx = await this.#xrplClient.autofill(tx);
+    console.log(preparedTx);
+    const res = await this.#xrplClient.submitAndWait(preparedTx, {
+      wallet: this.#distributorWallet,
+    });
     invariant(this.#issuingWallet, 'No issuing wallet found');
     invariant(this.#distributorWallet, 'No distributor wallet found');
     log.info(
@@ -405,23 +408,18 @@ export class NftMinter {
       Amount: {
         issuer: this.#issuingWallet.classicAddress,
         currency: this.#issuedCurrencyCode,
-        value: (
-          INDIVISIBLE_XRP_VALUE *
-          (this.#numberToCreate ? this.#numberToCreate : 1)
-        ).toString(),
+        value: this.#value,
       },
       Destination: this.#distributorWallet.classicAddress,
       TransactionType: 'Payment',
     };
     log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
+    const preparedTx = await this.#xrplClient.autofill(tx);
 
-    const res = await this.#xrplClient.submitAndWait(
-      correctlyPrepareTx(tx) as unknown as string,
-      {
-        wallet: this.#issuingWallet,
-        autofill: true,
-      }
-    );
+    console.log(preparedTx);
+    const res = await this.#xrplClient.submitAndWait(preparedTx, {
+      wallet: this.#issuingWallet,
+    });
     log.info(
       `${chalk.greenBright('Successfully sent NFT/S 🚀 tx:')} ${chalk.underline(
         `${determineBithompUri(this.#xrplClient.connection.getUrl())}/${
