@@ -57,6 +57,27 @@ async function createSellOffer(
   await client.submitAndWait(transactionBlob, { wallet });
 }
 
+async function createBuyOffer(
+  client: xrpl.Client,
+  wallet: xrpl.Wallet,
+  sellerWallet: xrpl.Wallet,
+  tokenId: string
+){
+  const transactionBlob: xrpl.NFTokenCreateOffer = {
+    TransactionType: 'NFTokenCreateOffer',
+    Account: wallet.classicAddress,
+    Owner: sellerWallet.classicAddress,
+    TokenID: tokenId,
+    Amount: '10000000',
+    Flags: Number.parseInt("1"),
+  };
+
+  console.log(transactionBlob)
+
+  const tx = await client.submitAndWait(transactionBlob, { wallet });
+  console.log(tx)
+}
+
 async function listBuyAndSellOffersForToken(
   client: xrpl.Client,
   token: string
@@ -99,6 +120,25 @@ async function acceptSellOffer(
   };
   const tx = await client.submitAndWait(transactionBlob, { wallet });
 }
+
+function acceptBuyOffer(
+  client: xrpl.Client,
+  buyerClassicAddress: string,
+  wallet: xrpl.Wallet,
+  buyOffer: xrpl.AccountChannelsResponse | undefined
+) {
+  console.log(buyerClassicAddress)
+  console.log(buyOffer)
+
+  //change to accept buy offer
+  // const transactionBlob: xrpl.NFTokenAcceptOffer = {
+  //   TransactionType: 'NFTokenAcceptOffer',
+  //   Account: wallet.classicAddress,
+  //   SellOffer: sellOffer,
+  // };
+  // const tx = await client.submitAndWait(transactionBlob, { wallet });
+}
+
 async function init() {
   const client = new xrpl.Client('wss://xls20-sandbox.rippletest.net:51233');
   await client.connect();
@@ -113,13 +153,17 @@ async function main() {
   const buyer = xrpl.Wallet.fromSeed('snhtQTfGFVU6xr12F6eHhxJUpaaME');
   const sellerNfts = await listNfts(client, seller);
 
-  await createSellOffer(client, seller, sellerNfts[0].TokenID);
-  const { sellOffers } = await listBuyAndSellOffersForToken(
+  await createBuyOffer(client, buyer, seller, sellerNfts[0].TokenID);
+
+  // await createSellOffer(client, seller, sellerNfts[0].TokenID);
+  const { buyOffers } = await listBuyAndSellOffersForToken(
     client,
     sellerNfts[0].TokenID
   );
-  await acceptSellOffer(client, buyer, sellOffers?.result.offers[0].index);
-  await listNfts(client, buyer);
+  console.log(buyOffers)
+  // await acceptSellOffer(client, buyer, sellOffers?.result.offers[0].index);
+  acceptBuyOffer(client, buyer.classicAddress, seller, buyOffers);
+  // await listNfts(client, buyer);
   await client.disconnect();
 }
 
