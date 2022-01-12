@@ -126,7 +126,6 @@ export class NftMinter {
    * * @see {@link mint} If you want a simple mint. This handles the initialization process for you.
    */
   async init() {
-    console.log(this.#value);
     try {
       const meta = await getIpfsMeta(this.#metadata);
       this.#metadataInfo = meta.data;
@@ -355,7 +354,6 @@ export class NftMinter {
     );
 
     const preparedTx = await this.#xrplClient.autofill(tx);
-    console.log(preparedTx);
     const res = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#distributorWallet,
     });
@@ -416,7 +414,6 @@ export class NftMinter {
     log.debug(chalk.yellow('\nSending NFT/s to distributor wallet...'));
     const preparedTx = await this.#xrplClient.autofill(tx);
 
-    console.log(preparedTx);
     const res = await this.#xrplClient.submitAndWait(preparedTx, {
       wallet: this.#issuingWallet,
     });
