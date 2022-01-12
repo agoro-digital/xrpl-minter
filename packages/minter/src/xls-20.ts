@@ -15,7 +15,7 @@ async function mint(client: xrpl.Client, wallet: xrpl.Wallet) {
 }
 
 async function listNfts(client: xrpl.Client, wallet: xrpl.Wallet) {
-  //@ts-ignore
+  //@ts-expect-error - error
   const nfts = await client.request({
     method: 'account_nfts',
     account: wallet.classicAddress,
@@ -45,7 +45,7 @@ async function createSellOffer(
     Account: wallet.classicAddress,
     tokenid: tokenId,
     Amount: '10',
-    Flags: parseInt('1'),
+    Flags: Number.parseInt('1'),
   };
   //@ts-expect-error - error
   await client.submitAndWait(transactionBlob, { wallet });
@@ -63,16 +63,16 @@ async function main() {
   const wallet = xrpl.Wallet.fromSeed('shePK2hC5qqWJhUiufsNhNmMqBSuD');
   await listNfts(client, wallet);
 
-  createSellOffer(
+  await createSellOffer(
     client,
     wallet,
     '00000000477A8F39A19CCCA7C72342D17220082BE714667BFBE004A70000000B'
   );
-  client.disconnect();
+  await client.disconnect();
 }
 
 main()
   .then(() => {
     return;
   })
-  .catch(e => console.error(e));
+  .catch(error => console.error(error));
