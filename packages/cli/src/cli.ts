@@ -2,13 +2,11 @@
 import meow from 'meow';
 import chalk from 'chalk';
 import chalkAnimation from 'chalk-animation';
-// import { CID } from 'multiformats/cid';
-// import inquirer from 'inquirer';
 import inquirer from 'inquirer';
 import { mint, viewNfts } from './commands';
-import type { Command } from './types';
-// import { NftMinter } from '@agoro-digital/xrpl-minter';
-// import type { LogLevelDesc } from 'loglevel';
+import type { Command, Faucet } from './types';
+import { getFaucet } from './utils';
+import invariant from 'tiny-invariant';
 
 const help = `
   Usage:
@@ -33,7 +31,7 @@ run()
 // const isMainnet = (network: Network) => network === 'mainnet';
 
 async function run() {
-  const cli = meow(help, {
+  meow(help, {
     flags: {
       help: { type: 'boolean', default: false, alias: 'h' },
       version: { type: 'boolean', default: false, alias: 'v' },
@@ -47,11 +45,14 @@ async function run() {
 
   console.log(chalk.magentaBright('\n🍵 Welcome to xrpl-nft cli tool!.\n'));
 
-  const commands = new Map<Command, () => Promise<unknown>>();
+  const commands = new Map<Command, (faucet: string) => Promise<void>>();
   commands.set('mint', mint);
   commands.set('viewNfts', viewNfts);
 
-  const { command } = await inquirer.prompt<{ command: Command }>([
+  const { command, faucet } = await inquirer.prompt<{
+    command: Command;
+    faucet: Faucet;
+  }>([
     {
       name: 'command',
       type: 'list',
@@ -61,11 +62,25 @@ async function run() {
         { name: 'View NFTS for an account', value: 'viewNfts' },
       ],
     },
+    {
+      name: 'faucet',
+      type: 'list',
+      message: 'Which XRP network do you wish to mint on?',
+      choices: [
+        { name: 'NFT-Devnet', value: 'nftDevnet' },
+        { name: 'Testnet', value: 'testnet' },
+        { name: 'Mainnet', value: 'mainnet' },
+      ],
+    },
   ]);
+
+  const xrpNetwork = getFaucet(faucet);
+
+  invariant(xrpNetwork, 'Unable to find matching XRP network');
 
   const commandToRun = commands.get(command);
   if (commandToRun) {
-    await commandToRun();
+    await commandToRun(xrpNetwork);
   }
 
   // const util = await inquirer.prompt([
