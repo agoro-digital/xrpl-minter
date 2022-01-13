@@ -58,7 +58,7 @@ async function run() {
       type: 'list',
       message: 'what would you like to do?',
       choices: [
-        { name: 'Mint a new nft', value: 'mint' },
+        { name: 'Mint a new NFT', value: 'mint' },
         { name: 'View NFTS for an account', value: 'viewNfts' },
       ],
     },

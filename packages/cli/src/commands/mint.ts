@@ -1,28 +1,15 @@
 import { mint as nftMint } from '@agoro-digital/xrpl-nft';
 import inquirer from 'inquirer';
-import invariant from 'tiny-invariant';
-import type { Faucet } from '../types';
-import { getFaucet, isValidSeed } from '../utils';
+import { isValidSeed } from '../utils';
 
-export const mint = async () => {
-  const { faucet, walletSecret, tokenTaxon, URI } = await inquirer.prompt<{
-    faucet: Faucet;
+export const mint = async (faucet: string) => {
+  const { walletSecret, tokenTaxon, URI } = await inquirer.prompt<{
     walletSecret: string;
     tokenTaxon: number;
     URI?: string;
     extraOptions: boolean;
     extraOptionsChoice?: string;
   }>([
-    {
-      name: 'faucet',
-      type: 'list',
-      message: 'Which XRP network do you wish to mint on?',
-      choices: [
-        { name: 'NFT-Devnet', value: 'nftDevnet' },
-        { name: 'Testnet', value: 'testnet' },
-        { name: 'Mainnet', value: 'mainnet' },
-      ],
-    },
     {
       type: 'input',
       name: 'walletSecret',
@@ -72,11 +59,7 @@ export const mint = async () => {
     },
   ]);
 
-  const xrpNetwork = getFaucet(faucet);
-
-  invariant(xrpNetwork, 'Unable to find matching XRP network');
-
-  await nftMint(xrpNetwork, {
+  await nftMint(faucet, {
     walletSecret,
     TokenTaxon: tokenTaxon,
     URI,
