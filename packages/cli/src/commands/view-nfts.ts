@@ -1,3 +1,16 @@
-export const viewNfts = async () => {
-  return Promise.resolve();
+import { listNftsForAccount } from '@agoro-digital/xrpl-nft';
+import inquirer from 'inquirer';
+
+export const viewNfts = async (faucet: string) => {
+  const { walletAddress} = await inquirer.prompt<{
+    walletAddress: string;
+  }>([
+    {
+      type: 'input',
+      name: 'walletAddress',
+      message: 'What is the address of the issuing wallet?',
+    },
+  ]);
+
+  await listNftsForAccount(faucet, walletAddress);
 };
