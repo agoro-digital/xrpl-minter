@@ -4,13 +4,11 @@ import chalk from 'chalk';
 import chalkAnimation from 'chalk-animation';
 // import { CID } from 'multiformats/cid';
 // import inquirer from 'inquirer';
-import { isValidSecret } from 'xrpl';
 import inquirer from 'inquirer';
 import { mint, viewNfts } from './commands';
+import type { Command } from './types';
 // import { NftMinter } from '@agoro-digital/xrpl-minter';
 // import type { LogLevelDesc } from 'loglevel';
-
-type Command = 'mint' | 'viewNfts';
 
 const help = `
   Usage:
@@ -31,7 +29,6 @@ run()
     process.exit(1);
   });
 
-// const isValidSeed = (seed: string) => isValidSecret(seed) || 'Invalid seed.';
 // const isTestnet = (network: Network) => network === 'testnet';
 // const isMainnet = (network: Network) => network === 'mainnet';
 

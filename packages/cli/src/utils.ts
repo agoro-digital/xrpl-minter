@@ -1,3 +1,4 @@
+import * as xrpl from 'xrpl';
 import type { Faucet } from './types';
 
 export const getFaucet = (faucet: Faucet) => {
@@ -8,3 +9,6 @@ export const getFaucet = (faucet: Faucet) => {
 
   return faucets.get(faucet);
 };
+
+export const isValidSeed = (seed: string) =>
+  xrpl.isValidSecret(seed) || 'Invalid seed.';
