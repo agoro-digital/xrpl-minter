@@ -134,7 +134,7 @@
 // /* eslint-enable @typescript-eslint/no-unsafe-argument */
 // /* eslint-enable unicorn/no-null */
 
-import { mint, listNftsForAccount } from './xls-20';
+import { mint, listNftsForAccount } from '../lib';
 
 // mint('wss://xls20-sandbox.rippletest.net:51233', {
 //   walletSecret: 'shePK2hC5qqWJhUiufsNhNmMqBSuD',

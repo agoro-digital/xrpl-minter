@@ -1,4 +1,5 @@
 import { Client, Wallet } from 'xrpl';
+import invariant from 'tiny-invariant';
 import type {
   ListNftsForAccountFn,
   ListNftsReq,
@@ -18,6 +19,7 @@ async function initClient(server: string) {
  * @param config - Information around the transaction.
  */
 export const mint: MintFn = async (server, { walletSecret, ...tx }) => {
+  invariant(server, 'mint() requires a server argument');
   const wallet = Wallet.fromSeed(walletSecret);
 
   const client = await initClient(server);
@@ -44,6 +46,12 @@ export const listNftsForAccount: ListNftsForAccountFn = async (
   server,
   walletAddress
 ) => {
+  invariant(server, 'listNftsForAccount() requires a server argument');
+  invariant(
+    walletAddress,
+    'listNftsForAccount() requires a walletAddress argument'
+  );
+
   const client = await initClient(server);
 
   const nfts = await client.request<ListNftsReq, ListNftsRes>({

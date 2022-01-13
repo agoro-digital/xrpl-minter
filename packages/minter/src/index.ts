@@ -1,2 +1,1 @@
-// export * from './models/nft-minter';
-export * from './xls-20';
+export { mint, listNftsForAccount } from './xls-20';
