@@ -1,4 +1,4 @@
-import type { NFTokenMint, TxResponse } from 'xrpl';
+import type * as xrpl from 'xrpl';
 
 // ************* Base Types *************
 
@@ -23,7 +23,8 @@ interface BaseResponse {
 
 // ************* Mint NFTS *************
 
-interface MintConfig extends Omit<NFTokenMint, 'Account' | 'TransactionType'> {
+interface MintConfig
+  extends Omit<xrpl.NFTokenMint, 'Account' | 'TransactionType'> {
   /**
    * The Secret of the account that is minting the token. The account MUST either:
    *    - match the Issuer field in the NFToken object
@@ -35,7 +36,7 @@ interface MintConfig extends Omit<NFTokenMint, 'Account' | 'TransactionType'> {
 export type MintFn = (
   server: string,
   config: MintConfig
-) => Promise<TxResponse>;
+) => Promise<xrpl.TxResponse>;
 
 // ************* ListNFTs for account *************
 

@@ -2,7 +2,7 @@
   "name": "@agoro-digital/mint-nft",
   "version": "0.1.10",
   "description": "CLI tool to Mint NFTs on the XRPL ledger",
-  "source": "cli.ts",
+  "source": "src/cli.ts",
   "main": "lib/cli.js",
   "types": "lib/cli.d.ts",
   "files": [
@@ -29,7 +29,7 @@
     "url": "https://github.com/lukebrobbs"
   },
   "dependencies": {
-    "@agoro-digital/xrpl-minter": "0.1.7",
+    "@agoro-digital/xrpl-nft": "0.0.1",
     "chalk": "^4.1.2",
     "chalk-animation": "^1.6.0",
     "inquirer": "^8.2.0",
