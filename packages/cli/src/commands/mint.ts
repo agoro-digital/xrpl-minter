@@ -1,4 +1,4 @@
-import { mint as nftMint } from '@agoro-digital/xrpl-nft';
+import { mint as nftMint, MintConfig } from '@agoro-digital/xrpl-nft';
 import inquirer from 'inquirer';
 import { isValidSeed } from '../utils';
 
@@ -16,7 +16,7 @@ const addIssuer: inquirer.QuestionCollection<{ answer: string | number }> = {
 
 const askForExtras = async () => {
   let extras: {
-    [K: string]: any;
+    [K: string]: string | number;
   } = {};
   const { extraOptionsChoice } = await inquirer.prompt<{
     extraOptionsChoice: string;
@@ -111,15 +111,15 @@ export const mint = async (faucet: string) => {
         default: false,
       },
     ]);
-
+  let extras: Partial<MintConfig> = {};
   if (extraOptions) {
-    const extras = await askForExtras();
-    console.log({ extras });
+    extras = await askForExtras();
   }
 
   await nftMint(faucet, {
     walletSecret,
     TokenTaxon: tokenTaxon,
     URI,
+    ...extras,
   });
 };
