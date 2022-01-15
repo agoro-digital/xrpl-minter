@@ -1,4 +1,4 @@
-import { Client, Wallet } from 'xrpl';
+import { Client, Wallet, convertStringToHex } from 'xrpl';
 import invariant from 'tiny-invariant';
 import type {
   ListNftsForAccountFn,
@@ -27,13 +27,13 @@ export const mint: MintFn = async (server, { walletSecret, ...tx }) => {
   const res = await client.submitAndWait(
     {
       ...tx,
+      ...(tx.URI && { URI: convertStringToHex(tx.URI) }),
       TransactionType: 'NFTokenMint',
       Account: wallet.classicAddress,
     },
     { wallet }
   );
   await client.disconnect();
-
   return res;
 };
 
