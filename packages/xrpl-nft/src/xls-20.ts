@@ -5,6 +5,7 @@ import type {
   ListNftsReq,
   ListNftsRes,
   MintFn,
+  NFT,
 } from './types';
 
 async function initClient(server: string) {
@@ -33,6 +34,21 @@ export const mint: MintFn = async (server, { walletSecret, ...tx }) => {
     },
     { wallet }
   );
+
+  const currentNfts = res.result.meta?.AffectedNodes[0].ModifiedNode.FinalFields.NonFungibleTokens
+  const previousNfts = res.result.meta?.AffectedNodes[0].ModifiedNode.PreviousFields.NonFungibleTokens
+
+  const difference = [];
+
+  currentNfts.forEach(nft => {     
+      if (!previousNfts.some(nft2 => nft2.NonFungibleToken.TokenID === nft.NonFungibleToken.TokenID)) {
+        difference.push(nft.NonFungibleToken.TokenID); 
+      }
+    });
+  
+  console.log("DIFFERENCE #####################")
+  console.log(difference);
+
   await client.disconnect();
   return res;
 };
