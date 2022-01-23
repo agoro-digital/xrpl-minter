@@ -64,3 +64,26 @@ export type ListNftsForAccountFn = (
   server: string,
   walletAddress: string
 ) => Promise<NFT[]>;
+
+export interface ModifiedNode {
+  ModifiedNode: {
+      LedgerEntryType: string;
+      LedgerIndex: string;
+      FinalFields?: {
+          [field: string]: unknown;
+      };
+      PreviousFields?: {
+          [field: string]: unknown;
+      };
+      PreviousTxnID?: string;
+      PreviouTxnLgrSeq?: number;
+  };
+}
+
+export interface NFT {
+  NonFungibleToken: {
+    TokenID: string;
+    URI: string;
+  }
+}
+
