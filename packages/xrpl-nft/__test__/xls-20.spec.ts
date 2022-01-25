@@ -1,4 +1,4 @@
-import { mockClient, mockWallet } from './utils';
+import { mockClient, mockWallet } from './test-utils';
 import { listNftsForAccount, mint } from '../src/xls-20';
 import type { NFT } from '../src/types';
 import { Client, Wallet } from 'xrpl';

@@ -1,29 +1,41 @@
-import {TxResponse, TransactionMetadata } from 'xrpl';
-import type {
-  NFT,
-  ModifiedNode
-} from '../types';
+import type { TxResponse } from 'xrpl';
+import type { NonFungibleToken, ModifiedNode } from '../types';
 
 export const getTokenIdFromResponse = (res: TxResponse) => {
-    const resMeta = res.result.meta as TransactionMetadata;
+  let tokenId = '';
+  const resMeta = res.result?.meta;
+  if (!resMeta || typeof resMeta === 'string') return tokenId;
 
-  const modifiedNode = resMeta.AffectedNodes.find(node => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if(node.ModifiedNode.LedgerEntryType === "NFTokenPage"){
+  const affectedNodes = resMeta.AffectedNodes as ModifiedNode[];
+
+  const modifiedNode = affectedNodes.find(node => {
+    if (node.ModifiedNode?.LedgerEntryType === 'NFTokenPage') {
       return true;
     }
-  }) as ModifiedNode
+  });
 
-  const currentNfts = modifiedNode.ModifiedNode.FinalFields?.NonFungibleTokens as NFT[]
-  const previousNfts = modifiedNode.ModifiedNode.PreviousFields?.NonFungibleTokens as NFT[]
+  if (!modifiedNode) {
+    return tokenId;
+  }
 
-  let tokenId = "";
+  const currentNfts = modifiedNode.ModifiedNode.FinalFields
+    ?.NonFungibleTokens as NonFungibleToken[];
+  const previousNfts = modifiedNode.ModifiedNode.PreviousFields
+    ?.NonFungibleTokens as NonFungibleToken[];
 
-  currentNfts.forEach(nft => {     
-      if (!previousNfts.some(nft2 => nft2.NonFungibleToken.TokenID === nft.NonFungibleToken.TokenID)) {
-        tokenId = nft.NonFungibleToken.TokenID; 
-      }
-    });
-  
-  return tokenId
-}
+  if (!currentNfts || !previousNfts) return tokenId;
+
+  currentNfts.forEach(currentNft => {
+    if (
+      !previousNfts.some(
+        prevNft =>
+          prevNft.NonFungibleToken.TokenID ===
+          currentNft.NonFungibleToken.TokenID
+      )
+    ) {
+      tokenId = currentNft.NonFungibleToken.TokenID;
+    }
+  });
+
+  return tokenId;
+};
