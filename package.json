@@ -6,7 +6,7 @@
   "repository": "git@github.com:agoro-digital/xrpl-minter.git",
   "workspaces": [
     "packages/cli",
-    "packages/minter"
+    "packages/xrpl-nft"
   ],
   "author": {
     "name": "Luke Brobbin",

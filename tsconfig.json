@@ -1,4 +1,7 @@
 {
   "files": [],
-  "references": [{ "path": "./packages/minter" }, { "path": "./packages/cli" }]
+  "references": [
+    { "path": "./packages/xrpl-nft" },
+    { "path": "./packages/cli" }
+  ]
 }

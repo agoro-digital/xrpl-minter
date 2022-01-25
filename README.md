@@ -10,6 +10,6 @@ This repo contains the following packages:
 
 A Command line tool to mint NFTs on the XRP Ledger. Simplifying access to XRP Ledger fans for the creation of their own Xrp Ledger nfts.
 
-### [NFT Minter](./packages/minter/README.md)
+### [NFT Minter](./packages/xrpl-nft/README.md)
 
 This contains all the necessary methods to mint an NFT on the XRP ledger.
