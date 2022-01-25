@@ -2,12 +2,6 @@ import { mint as nftMint, MintConfig } from '@agoro-digital/xrpl-nft';
 import inquirer from 'inquirer';
 import { isValidSeed } from '../utils';
 
-const addFlag: inquirer.QuestionCollection<{ answer: string | number }> = {
-  type: 'number',
-  name: 'answer',
-  message: 'What flag would you like to set?',
-};
-
 const addIssuer: inquirer.QuestionCollection<{ answer: string | number }> = {
   type: 'input',
   name: 'answer',
@@ -27,10 +21,6 @@ const askForExtras = async () => {
       message: 'Select an extra option to add.',
       choices: [
         {
-          name: 'Set a Flag',
-          value: 'Flags',
-        },
-        {
           name: 'Set an issuer',
           value: 'Issuer',
         },
@@ -42,7 +32,6 @@ const askForExtras = async () => {
     string,
     inquirer.QuestionCollection<{ answer: string | number }>
   >();
-  optionsMap.set('Flags', addFlag);
   optionsMap.set('Issuer', addIssuer);
 
   const question = optionsMap.get(extraOptionsChoice);
