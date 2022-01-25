@@ -1,12 +1,10 @@
-import { Client, Wallet, convertStringToHex, TxResponse, TransactionMetadata } from 'xrpl';
+import { Client, Wallet, convertStringToHex, TxResponse } from 'xrpl';
 import invariant from 'tiny-invariant';
 import type {
   ListNftsForAccountFn,
   ListNftsReq,
   ListNftsRes,
   MintFn,
-  NFT,
-  ModifiedNode
 } from './types';
 
 async function initClient(server: string) {
@@ -35,28 +33,6 @@ export const mint: MintFn = async (server, { walletSecret, ...tx }) => {
     },
     { wallet }
   );
-
-  const resMeta = res.result.meta as TransactionMetadata;
-
-  const filteredNode = resMeta.AffectedNodes.find(node => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if(node.ModifiedNode.LedgerEntryType === "NFTokenPage"){
-      return true;
-    }
-  }) as ModifiedNode
-
-  const currentNfts: NFT[] = filteredNode.ModifiedNode.FinalFields?.NonFungibleTokens as NFT[]
-  const previousNfts: NFT[] = filteredNode.ModifiedNode.PreviousFields?.NonFungibleTokens as NFT[]
-
-  let difference = "";
-
-  currentNfts.forEach(nft => {     
-      if (!previousNfts.some(nft2 => nft2.NonFungibleToken.TokenID === nft.NonFungibleToken.TokenID)) {
-        difference = nft.NonFungibleToken.TokenID; 
-      }
-    });
-  
-  console.log(difference);
 
   await client.disconnect();
   return res;
