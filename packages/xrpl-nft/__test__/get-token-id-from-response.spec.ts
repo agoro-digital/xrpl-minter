@@ -1,11 +1,11 @@
-import type { TxResponse } from 'xrpl';
+import type * as xrpl from 'xrpl';
 import { getTokenIdFromResponse } from '../src';
 
 describe('getTokenIdFromResponse()', () => {
   test('Should return empty string if meta in the res is undefined', () => {
     const res = {
       id: 'someId',
-    } as TxResponse;
+    } as xrpl.TxResponse;
     expect(getTokenIdFromResponse(res)).toBe('');
   });
   test('Should return an empty string if result meta is a string', () => {
@@ -14,7 +14,7 @@ describe('getTokenIdFromResponse()', () => {
       result: {
         meta: '',
       },
-    } as TxResponse;
+    } as xrpl.TxResponse;
     expect(getTokenIdFromResponse(res)).toBe('');
   });
   test('If there are no modified nodes found, should return an empty string', () => {
@@ -25,7 +25,7 @@ describe('getTokenIdFromResponse()', () => {
           AffectedNodes: [{}],
         },
       },
-    } as TxResponse;
+    } as xrpl.TxResponse;
     expect(getTokenIdFromResponse(res)).toBe('');
   });
   test('if no currentNfts are found, should return an empty string', () => {
@@ -43,7 +43,7 @@ describe('getTokenIdFromResponse()', () => {
           ],
         },
       },
-    } as TxResponse;
+    } as xrpl.TxResponse;
     expect(getTokenIdFromResponse(res)).toBe('');
   });
   test('if no previous NFTs are found, should return an empty string', () => {

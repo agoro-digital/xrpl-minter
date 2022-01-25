@@ -1,11 +1,11 @@
-import type { TxResponse } from 'xrpl';
+import type * as xrpl from 'xrpl';
 import type { NonFungibleToken, ModifiedNode } from '../types';
 
 /**
  * Retrieve the TokenID. See the [XRPL docs](https://xrpl.org/nftokenmint.html) for more information around the minting transaction.
  * @param res - The transaction response for the NFTokenMint.
  */
-export const getTokenIdFromResponse = (res: TxResponse) => {
+export const getTokenIdFromResponse = (res: xrpl.TxResponse) => {
   let tokenId = '';
   const resMeta = res.result?.meta;
   if (!resMeta || typeof resMeta === 'string') return tokenId;
